@@ -110,6 +110,31 @@
   .plan-empty { font-size: 13px; color: var(--text-muted); margin-top: 8px; }
 
   .pin { background: transparent; border: none; }
+
+  .jumpnav {
+    position: sticky; top: 0; z-index: 1100;
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    background: var(--page); border-bottom: 1px solid var(--hairline);
+    padding: 8px 0; margin: 10px 0 4px;
+  }
+  .jumpnav a {
+    text-decoration: none; color: var(--text-primary); font-size: 13px; font-weight: 600;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 999px; padding: 6px 14px;
+  }
+  .jumpnav a:hover { border-color: rgba(11,11,11,0.3); }
+  #map, .plan, #list { scroll-margin-top: 56px; }
+
+  @media (max-width: 640px) {
+    #map { height: 46vh; margin: 0 10px; }
+    .mapnote, .legend-note { margin-left: 10px; margin-right: 10px; }
+    .ev { display: block; padding: 12px 6px; }
+    .ev .when { display: inline-block; margin-bottom: 2px; }
+    .ev .when .d { display: inline; margin-right: 6px; }
+    .ev .links { margin-top: 4px; white-space: normal; }
+    .ev .links br { display: none; }
+    .ev .links a { margin-right: 14px; }
+    .addbtn { width: 34px; height: 34px; font-size: 18px; }
+  }
   .legend-note { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
   .legend-note b { color: var(--text-secondary); font-weight: 600; }
   .popup-ev { margin: 6px 0; }
@@ -126,6 +151,13 @@
 <div class="wrap">
   <h1>Bay Area Weekend Planner — Jul 31 – Aug 2</h1>
   <div class="sub">This weekend's events across San Francisco, Santa Clara, Alameda (incl. Tri-Valley) &amp; San Mateo counties · Eventbrite + Facebook + Funcheap + 19hz + venue calendars · <em>192 weekend events + 20 on the radar</em> · Fri&nbsp;37 / Sat&nbsp;96 / Sun&nbsp;59</div>
+
+  <nav class="jumpnav" id="jumpnav">
+    <a href="#map">🗺 Map</a>
+    <a href="#planPanel">✓ My plan</a>
+    <a href="#list">☰ Events</a>
+    <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">↑ Top</a>
+  </nav>
 
   <div class="chips" id="countyChips">
     <span class="lbl">Counties</span>
@@ -524,6 +556,20 @@ try {
   }).addTo(map);
 } catch (err) {
   document.getElementById("map").innerHTML = '<div style="padding:40px;text-align:center;color:#898781;font-size:13px">Map couldn\'t load (no connection to the map library) — the list and planner below still work.</div>';
+}
+
+// Touch devices: one finger scrolls the PAGE (map won't trap it); two fingers pan/zoom the map.
+if (map && ("ontouchstart" in window)) {
+  map.dragging.disable();
+  const mapEl = document.getElementById("map");
+  mapEl.addEventListener("touchstart", ev => {
+    if (ev.touches.length >= 2) map.dragging.enable(); else map.dragging.disable();
+  }, { passive: true });
+  mapEl.addEventListener("touchend", () => map.dragging.disable(), { passive: true });
+  const hint = document.createElement("div");
+  hint.className = "mapnote";
+  hint.innerHTML = "<b>Touch screens:</b> scroll the page with one finger — use <b>two fingers</b> to move or zoom the map.";
+  mapEl.parentNode.insertBefore(hint, mapEl.nextSibling);
 }
 
 // group events by venue (weekend events + special-interest radar)
