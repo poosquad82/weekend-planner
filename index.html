@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bay Area Events — Map & List</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root {
+    color-scheme: light;
+    --surface-1: #fcfcfb;
+    --page: #f9f9f7;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #898781;
+    --hairline: #e1e0d9;
+    --border: rgba(11,11,11,0.10);
+    --c-sf: #2a78d6;      /* San Francisco */
+    --c-scl: #eb6834;     /* Santa Clara */
+    --c-ala: #1baf7a;     /* Alameda */
+    --c-smt: #4a3aa7;     /* San Mateo */
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page);
+    color: var(--text-primary);
+    line-height: 1.45;
+  }
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 24px 20px 60px; }
+  h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+  .sub { color: var(--text-secondary); font-size: 13.5px; margin-top: 4px; }
+  .sub em { font-style: normal; color: var(--text-muted); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 14px; align-items: center; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 6px 12px; border-radius: 999px; cursor: pointer; user-select: none;
+    background: var(--surface-1); border: 1px solid var(--border);
+    font-size: 13px; color: var(--text-primary); font-weight: 500;
+  }
+  .chip .dot { width: 10px; height: 10px; border-radius: 50%; flex: 0 0 auto; }
+  .chip.off { opacity: 0.38; }
+  .chip:hover { border-color: rgba(11,11,11,0.25); }
+  .chip .n { color: var(--text-muted); font-weight: 400; }
+  .chips .lbl { font-size: 12px; color: var(--text-muted); margin-right: 2px; }
+  .chips .sep { width: 1px; height: 20px; background: var(--hairline); margin: 0 4px; }
+
+  #map {
+    height: 520px; border-radius: 12px; border: 1px solid var(--border);
+    background: var(--surface-1);
+  }
+  .mapnote { font-size: 12px; color: var(--text-muted); margin-top: 8px; }
+
+  .county-section { margin-top: 34px; }
+  .county-head { display: flex; align-items: baseline; gap: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--hairline); }
+  .county-head .dot { width: 12px; height: 12px; border-radius: 50%; align-self: center; }
+  .county-head h2 { font-size: 16px; font-weight: 700; }
+  .county-head .n { font-size: 13px; color: var(--text-muted); }
+
+  .ev {
+    display: grid; grid-template-columns: 92px 1fr auto; gap: 4px 14px;
+    padding: 11px 4px; border-bottom: 1px solid var(--hairline); align-items: baseline;
+  }
+  .ev:last-child { border-bottom: none; }
+  .ev .when { font-size: 13px; color: var(--text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .ev .when .d { font-weight: 600; color: var(--text-primary); display: block; }
+  .ev .what .name { font-size: 14.5px; font-weight: 600; }
+  .ev .what .meta { font-size: 13px; color: var(--text-secondary); }
+  .ev .what .meta .cat { color: var(--text-muted); }
+  .ev .links { font-size: 12.5px; white-space: nowrap; }
+  .ev .links a { color: #256abf; text-decoration: none; }
+  .ev .links a:hover { text-decoration: underline; }
+  .ev.hidden { display: none; }
+  .county-section.hidden { display: none; }
+
+  .ev { cursor: pointer; user-select: none; }
+  .ev.sel { background: #eaf2fc; border-radius: 8px; }
+  .addbtn {
+    border: 1px solid var(--border); background: var(--surface-1); color: var(--text-secondary);
+    border-radius: 999px; width: 26px; height: 26px; cursor: pointer; font-size: 15px; line-height: 1;
+    margin-right: 8px; vertical-align: middle;
+  }
+  .ev.sel .addbtn { background: #2a78d6; color: #fff; border-color: #2a78d6; }
+
+  .plan {
+    margin-top: 18px; background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 18px;
+  }
+  .plan-head { font-size: 15px; font-weight: 700; }
+  .plan-head .n { color: var(--text-muted); font-weight: 400; font-size: 13px; }
+  .plan-hint { font-size: 12.5px; color: var(--text-muted); margin-top: 3px; }
+  .plan-day { margin-top: 12px; }
+  .plan-day h3 { font-size: 13.5px; font-weight: 700; margin-bottom: 4px; }
+  .plan-item { display: flex; align-items: baseline; gap: 8px; font-size: 13.5px; padding: 3px 0; }
+  .plan-item .pt { color: var(--text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .plan-item .rm { cursor: pointer; color: var(--text-muted); border: none; background: none; font-size: 14px; padding: 0 4px; }
+  .plan-item .rm:hover { color: #d03b3b; }
+  .plan-item .pl-name { color: #256abf; text-decoration: none; font-weight: 600; }
+  .plan-item .pl-name:hover { text-decoration: underline; }
+  .plan-item .pl-links { white-space: nowrap; font-size: 12.5px; }
+  .plan-item .pl-links a { color: #256abf; text-decoration: none; }
+  .plan-item .pl-links a:hover { text-decoration: underline; }
+  .route-btn {
+    display: inline-block; margin-top: 6px; padding: 6px 14px; border-radius: 999px;
+    background: #2a78d6; color: #fff !important; font-size: 13px; font-weight: 600; text-decoration: none;
+  }
+  .route-btn:hover { background: #256abf; }
+  .plan-empty { font-size: 13px; color: var(--text-muted); margin-top: 8px; }
+
+  .pin { background: transparent; border: none; }
+  .legend-note { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  .legend-note b { color: var(--text-secondary); font-weight: 600; }
+  .popup-ev { margin: 6px 0; }
+  .popup-ev .pn { font-weight: 600; font-size: 13px; }
+  .popup-ev .pd { font-size: 12px; color: #52514e; }
+  .popup-venue { font-weight: 700; font-size: 13.5px; margin-bottom: 2px; }
+  .popup-links { font-size: 12px; margin-top: 6px; }
+  .popup-links a { color: #256abf; }
+  .leaflet-popup-content { margin: 12px 14px; }
+  .leaflet-popup-content-wrapper { border-radius: 10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Bay Area Weekend Planner — Jul 31 – Aug 2</h1>
+  <div class="sub">This weekend's events across San Francisco, Santa Clara, Alameda (incl. Tri-Valley) &amp; San Mateo counties · Eventbrite + Facebook + Funcheap + 19hz + venue calendars · <em>192 weekend events + 20 on the radar</em> · Fri&nbsp;37 / Sat&nbsp;96 / Sun&nbsp;59</div>
+
+  <div class="chips" id="countyChips">
+    <span class="lbl">Counties</span>
+    <span class="chip" data-county="sf"><span class="dot" style="background:var(--c-sf)"></span>San Francisco <span class="n" id="n-sf"></span></span>
+    <span class="chip" data-county="scl"><span class="dot" style="background:var(--c-scl)"></span>Santa Clara <span class="n" id="n-scl"></span></span>
+    <span class="chip" data-county="ala"><span class="dot" style="background:var(--c-ala)"></span>Alameda <span class="n" id="n-ala"></span></span>
+    <span class="chip" data-county="smt"><span class="dot" style="background:var(--c-smt)"></span>San Mateo <span class="n" id="n-smt"></span></span>
+    <span class="sep"></span>
+    <span class="lbl">Day</span>
+    <span class="chip day-chip" data-day="all">All weekend</span>
+    <span class="chip day-chip off" data-day="2026-07-31">Friday</span>
+    <span class="chip day-chip off" data-day="2026-08-01">Saturday</span>
+    <span class="chip day-chip off" data-day="2026-08-02">Sunday</span>
+    <span class="sep"></span>
+    <span class="lbl">Source</span>
+    <span class="chip src-chip" data-src="eb">Eventbrite</span>
+    <span class="chip src-chip" data-src="fb">Facebook</span>
+    <span class="chip src-chip" data-src="fc">Funcheap</span>
+    <span class="chip src-chip" data-src="hz">19hz</span>
+  </div>
+
+  <div id="map"></div>
+  <div class="mapnote">Pin positions are approximate — use each pin's "Open in Google Maps" link for exact directions. Click a pin to see everything happening at that venue.</div>
+  <div class="legend-note"><b>Shapes (event type):</b> ● Music · ◆ Nightlife · ▲ Food &amp; Drink · ⬢ Culture · ▼ Sports · ⬟ Business · ★ Gaming · ■ Tiki &nbsp;|&nbsp; <b>Color = county; black = convention center / fairgrounds.</b> A venue with mixed events takes its highest-priority shape (★ &gt; ■ &gt; ◆ &gt; ▲ &gt; ⬢). Tiki, gaming &amp; convention events beyond this weekend stay on the map and appear in the "On the radar" list below.</div>
+
+  <div class="plan" id="planPanel">
+    <div class="plan-head">My plan <span class="n" id="planCount">(0 events)</span></div>
+    <div class="plan-hint">Double-click any event below (or tap its ＋ button) to add it to your plan. Each day gets a point-to-point route you can open in Google Maps — the starting point is left blank so you can enter your own location there. Click an event name in the plan to open its page with the full description; Tickets goes to the same listing. Note: the plan lives in this page only — it resets if you reload.</div>
+    <div id="planBody"><div class="plan-empty">Nothing picked yet.</div></div>
+  </div>
+
+  <div id="list"></div>
+</div>
+
+<script>
+const COUNTY = {
+  sf:  { name: "San Francisco County", color: "#2a78d6" },
+  scl: { name: "Santa Clara County",   color: "#eb6834" },
+  ala: { name: "Alameda County",       color: "#1baf7a" },
+  smt: { name: "San Mateo County",     color: "#4a3aa7" }
+};
+
+// date: ISO yyyy-mm-dd (first day if multi-day)
+const EVENTS = [
+  // ---- San Francisco County ----
+  { n:"FENIX FLEXIN of Shoreline Mafia", d:"2026-07-31", t:"10:00 PM", v:"Temple Nightclub", city:"San Francisco", co:"sf", cat:"Music", lat:37.7877, lng:-122.3968 },
+  { n:"LEO SEASON", d:"2026-07-31", t:"10:00 PM", v:"City Nights", city:"San Francisco", co:"sf", cat:"Nightlife", lat:37.7808, lng:-122.3990 },
+  { n:"PERREO PARI: Reggaeton + Latin Beats Dance Party", d:"2026-07-31", t:"10:00 PM", v:"OASIS", city:"San Francisco", co:"sf", cat:"Nightlife", lat:37.7719, lng:-122.4147 },
+  { n:"Salsa Bachata Cumbia Dancing + Dance Lessons", d:"2026-07-31", t:"7:45 PM", v:"Dance Fridays", city:"San Francisco", co:"sf", cat:"Nightlife", lat:37.7405, lng:-122.4032 },
+  { n:"CHRIS LUNO — Day Party", d:"2026-08-01", t:"2:00 PM", v:"620 Jones (Terrace)", city:"San Francisco", co:"sf", cat:"Music", lat:37.7866, lng:-122.4133 },
+  { n:"Transmutation — World Film Premiere & Artist Talk", d:"2026-08-01", t:"4:45 PM", v:"War Memorial Veterans Building", city:"San Francisco", co:"sf", cat:"Culture", lat:37.7796, lng:-122.4204 },
+  { n:"SalsaCrazy Saturday — Lessons + Salsa/Bachata", d:"2026-08-01", t:"7:45 PM", v:"Verdi Club", city:"San Francisco", co:"sf", cat:"Nightlife", lat:37.7633, lng:-122.4085 },
+  { n:"Alonzo King LINES Ballet Summer Showcase", d:"2026-08-01", t:"8:00 PM", v:"Cowell Theater, Fort Mason", city:"San Francisco", co:"sf", cat:"Culture", lat:37.8068, lng:-122.4322 },
+  { n:"HOT LATIN BOAT PARTY pt. 3 — Banda Maguey", d:"2026-08-01", t:"8:30 PM", v:"Pier 3 — Hornblower Cruise", city:"San Francisco", co:"sf", cat:"Music", lat:37.7986, lng:-122.3946 },
+  { n:"JAMES MAC (Afro House / Tech House)", d:"2026-08-01", t:"9:00 PM", v:"MadaRae", city:"San Francisco", co:"sf", cat:"Music", lat:37.7810, lng:-122.3960 },
+  { n:"HAFLA HABIBI — Middle Eastern Nightclub Party", d:"2026-08-01", t:"10:00 PM", v:"Paname SF", city:"San Francisco", co:"sf", cat:"Nightlife", lat:37.7864, lng:-122.4102 },
+  { n:"CHEETAH GIRLZ", d:"2026-08-01", t:"10:00 PM", v:"City Nights", city:"San Francisco", co:"sf", cat:"Nightlife", lat:37.7808, lng:-122.3990 },
+  { n:"\"BAILE INOLVIDABLE\" Latin Dance Party", d:"2026-08-01", t:"10:00 PM", v:"The EndUp", city:"San Francisco", co:"sf", cat:"Nightlife", lat:37.7799, lng:-122.4034 },
+  { n:"R&B and RIBS", d:"2026-08-02", t:"2:00 PM", v:"El Rio", city:"San Francisco", co:"sf", cat:"Music + Food", lat:37.7470, lng:-122.4193 },
+  { n:"Sweet Tooth Fest", d:"2026-08-02", t:"2:00 PM", v:"The Stud", city:"San Francisco", co:"sf", cat:"Food & Drink", lat:37.7757, lng:-122.4090 },
+  { n:"No Signal SF — Whomp Wagon Fundraiser", d:"2026-08-02", t:"3:00 PM", v:"Audio Nightclub", city:"San Francisco", co:"sf", cat:"Music", lat:37.7717, lng:-122.4136 },
+  { n:"BOTAS CON BASS — Mexa Rave Day Party", d:"2026-08-02", t:"4:00 PM", v:"The EndUp", city:"San Francisco", co:"sf", cat:"Nightlife", lat:37.7799, lng:-122.4034 },
+  { n:"R&B and Tacos Sunset Afterparty (Sausalito — Marin bonus)", d:"2026-08-02", t:"5:00 PM", v:"ERIA Sausalito", city:"Sausalito", co:"sf", cat:"Music + Food", lat:37.8562, lng:-122.4870 },
+  { n:"Help is on the Way XXXII", d:"2026-08-02", t:"7:30 PM", v:"Marines' Memorial Theatre", city:"San Francisco", co:"sf", cat:"Culture", lat:37.7889, lng:-122.4103 },
+  { n:"Clutch The Pearls! Drag Cabaret", d:"2026-08-02", t:"7:30 PM", v:"Make-Out Room", city:"San Francisco", co:"sf", cat:"Nightlife", lat:37.7553, lng:-122.4187 },
+  { n:"Yerdrink! Festival Ready Pre-Party", d:"2026-08-06", t:"8:00 PM", v:"Curio (inside The Chapel)", city:"San Francisco", co:"sf", cat:"Food & Drink", lat:37.7607, lng:-122.4218 },
+  { n:"Recess — Day Party", d:"2026-08-08", t:"3:00 PM", v:"620 Jones", city:"San Francisco", co:"sf", cat:"Music", lat:37.7866, lng:-122.4133 },
+  { n:"ORGANIC — Tribute to DJ Dan", d:"2026-08-15", t:"2:00 PM", v:"Phoenix Hotel", city:"San Francisco", co:"sf", cat:"Music", lat:37.7834, lng:-122.4162 },
+  { n:"Helado Tropical at YBG Festival", d:"2026-08-15", t:"2:00 PM", v:"Yerba Buena Gardens", city:"San Francisco", co:"sf", cat:"Music", lat:37.7850, lng:-122.4023 },
+  { n:"Noe Valley Summer Wine Walk", d:"2026-08-20", t:"4:30 PM", v:"Noe Valley Town Square", city:"San Francisco", co:"sf", cat:"Food & Drink", lat:37.7512, lng:-122.4324 },
+  { n:"Caroline Chambers — What to Cook: Make It Fast", d:"2026-08-20", t:"7:00 PM", v:"JCC of San Francisco", city:"San Francisco", co:"sf", cat:"Food & Drink", lat:37.7861, lng:-122.4470 },
+  { n:"Dancing Queen — ABBA Glitter Disco", d:"2026-08-22", t:"9:00 PM", v:"The Great Northern", city:"San Francisco", co:"sf", cat:"Nightlife", lat:37.7676, lng:-122.4062 },
+  { n:"SUDS FRANCISCO (beer festival)", d:"2026-08-23", t:"2:00 PM", v:"Salesforce Park", city:"San Francisco", co:"sf", cat:"Food & Drink", lat:37.7898, lng:-122.3966 },
+  { n:"ROBERT REICH — The Last Class", d:"2026-08-27", t:"7:00 PM", v:"JCC of San Francisco", city:"San Francisco", co:"sf", cat:"Culture", lat:37.7861, lng:-122.4470 },
+  { n:"Fine Dining Fundraiser for CSP", d:"2026-08-29", t:"6:00 PM", v:"Mariposa Hunters Point Yacht Club", city:"San Francisco", co:"sf", cat:"Food & Drink", lat:37.7532, lng:-122.3830 },
+  { n:"SAKE DAY 2026", d:"2026-09-26", t:"4:00 PM", v:"Hotel Kabuki", city:"San Francisco", co:"sf", cat:"Food & Drink", lat:37.7853, lng:-122.4290 },
+  { n:"Chinatown After Dark", d:"2026-07-31", t:"9:00 PM", v:"Mr. Mahjong's", city:"San Francisco", co:"sf", cat:"Nightlife", lat:37.7941, lng:-122.4078 },
+  { n:"The Where with Regina Saisi (improv)", d:"2026-08-01", t:"10:00 AM", v:"BATS Bayfront Theatre, Fort Mason", city:"San Francisco", co:"sf", cat:"Culture", lat:37.8060, lng:-122.4325 },
+  { n:"Aphex Twin — Selected Ambient Works: LISTEN", d:"2026-08-01", t:"10:30 AM", v:"Envelop SF", city:"San Francisco", co:"sf", cat:"Music", lat:37.7480, lng:-122.3870 },
+  { n:"Poetry Workshop with Nia Pearl", d:"2026-08-01", t:"12:00 PM", v:"Yerba Buena Gardens", city:"San Francisco", co:"sf", cat:"Culture", lat:37.7850, lng:-122.4023 },
+  { n:"The Fabric of Celluloid — talk w/ Dr. Alla Gadassik", d:"2026-08-01", t:"1:00 PM", v:"Museum of Craft and Design", city:"San Francisco", co:"sf", cat:"Culture", lat:37.7580, lng:-122.3880 },
+  { n:"AAPI On The Bay: Islander Roots", d:"2026-08-01", t:"2:00 PM", v:"Gold Bar Whiskey Distillery, Treasure Island", city:"San Francisco", co:"sf", cat:"Food & Drink", lat:37.8180, lng:-122.3700 },
+  { n:"No Code Vibe Mode Day Party", d:"2026-08-01", t:"4:00 PM", v:"Rick & Roxy's", city:"San Francisco", co:"sf", cat:"Nightlife", lat:37.7600, lng:-122.4210 },
+  { n:"A Night of Music, Groove & Garcia (Marin bonus)", d:"2026-08-01", t:"5:00 PM", v:"Sausalito Center for the Arts", city:"Sausalito", co:"sf", cat:"Music", lat:37.8590, lng:-122.4855 },
+  { n:"MIDNIGHTS — Taylor Swift Dance Party (early version)", d:"2026-08-01", t:"6:00 PM", v:"Rickshaw Stop", city:"San Francisco", co:"sf", cat:"Nightlife", lat:37.7765, lng:-122.4196 },
+  { n:"Hot Girl Summer: Bootie Mashup", d:"2026-08-01", t:"9:00 PM", v:"Cat Club", city:"San Francisco", co:"sf", cat:"Nightlife", lat:37.7754, lng:-122.4076 },
+  { n:"Hot Line(up)", d:"2026-08-01", t:"10:00 PM", v:"Hawthorn Nightclub", city:"San Francisco", co:"sf", cat:"Nightlife", lat:37.7878, lng:-122.4040 },
+  { n:"Hello Gatita Perreo", d:"2026-08-01", t:"10:00 PM", v:"Temple Nightclub", city:"San Francisco", co:"sf", cat:"Nightlife", lat:37.7877, lng:-122.3968 },
+  { n:"Bad Bunnies", d:"2026-08-01", t:"10:00 PM", v:"The Grand", city:"San Francisco", co:"sf", cat:"Nightlife", lat:37.7788, lng:-122.3987 },
+  { n:"FOR THE NIGHT 8.01", d:"2026-08-01", t:"10:00 PM", v:"The Valencia Room", city:"San Francisco", co:"sf", cat:"Nightlife", lat:37.7625, lng:-122.4216 },
+  { n:"El Circo del Perreo (free entrance)", d:"2026-08-01", t:"10:00 PM", v:"Carbon Lounge", city:"San Francisco", co:"sf", cat:"Nightlife", lat:37.7870, lng:-122.4110 },
+  { n:"MOVEMENT Ecstatic Dance SF // BEX NAJ", d:"2026-08-02", t:"10:00 AM", v:"554 Fillmore St", city:"San Francisco", co:"sf", cat:"Music", lat:37.7735, lng:-122.4310 },
+  { n:"Soulful Sundays — The R&B Brunch (Marin bonus)", d:"2026-08-02", t:"11:00 AM", v:"ERIA Sausalito", city:"Sausalito", co:"sf", cat:"Music + Food", lat:37.8562, lng:-122.4870 },
+  { n:"Color Your Mind at YBG Festival", d:"2026-08-02", t:"12:00 PM", v:"Yerba Buena Gardens", city:"San Francisco", co:"sf", cat:"Culture", lat:37.7850, lng:-122.4023 },
+  { n:"San Francisco Bridal Expo", d:"2026-08-02", t:"12:00 PM", v:"2300 Chestnut St", city:"San Francisco", co:"sf", cat:"Culture", lat:37.8000, lng:-122.4430 },
+  { n:"BEACHCRIMES — Day Party at Hotel VIA Rooftop", d:"2026-08-02", t:"1:00 PM", v:"Hotel VIA", city:"San Francisco", co:"sf", cat:"Music", lat:37.7785, lng:-122.3921 },
+  { n:"Craft Cinema SF — The Notebook", d:"2026-08-02", t:"3:00 PM", v:"Marina Theater", city:"San Francisco", co:"sf", cat:"Culture", lat:37.8005, lng:-122.4400 },
+  { n:"Emily & James — Dance, Music, Theatre (Marin bonus)", d:"2026-08-02", t:"3:00 PM", v:"Sausalito Center for the Arts", city:"Sausalito", co:"sf", cat:"Culture", lat:37.8590, lng:-122.4855 },
+  { n:"Tablao at The Faight — An Evening of Flamenco", d:"2026-08-02", t:"6:00 PM", v:"The Faight Collective", city:"San Francisco", co:"sf", cat:"Music", lat:37.7722, lng:-122.4300 },
+  { n:"DAYDREAM in San Francisco", d:"2026-08-02", t:"7:00 PM", v:"Beso Mae Cocktail Lounge", city:"San Francisco", co:"sf", cat:"Nightlife", lat:37.7900, lng:-122.4100 },
+  { n:"The After Party SF", d:"2026-08-02", t:"9:00 PM", v:"The Valencia Room", city:"San Francisco", co:"sf", cat:"Nightlife", lat:37.7625, lng:-122.4216 },
+  // Facebook — SF
+  { n:"Steve Lucky's Hammond Cheese Trio", d:"2026-07-31", t:"evening", v:"Halfway Club, 1166 Geneva Ave", city:"San Francisco", co:"sf", cat:"Music", src:"fb", lat:37.7115, lng:-122.4400 },
+  { n:"Patrick Makuakāne & Nā Lei Hulu Present EA (hula)", d:"2026-07-31", t:"7:00 PM", v:"Presidio Theatre", city:"San Francisco", co:"sf", cat:"Culture", src:"fb", lat:37.7982, lng:-122.4560 },
+  { n:"Tango in the Square", d:"2026-07-31", t:"evening", v:"Union Square", city:"San Francisco", co:"sf", cat:"Music", src:"fb", lat:37.7880, lng:-122.4074 },
+  { n:"The Crosseyed (Talking Heads tribute)", d:"2026-07-31", t:"8:00 PM", v:"The Chapel", city:"San Francisco", co:"sf", cat:"Music", src:"fb", lat:37.7609, lng:-122.4212 },
+  { n:"Bachata Lab Classes and Social", d:"2026-07-31", t:"8:00 PM", v:"1830 17th St", city:"San Francisco", co:"sf", cat:"Nightlife", src:"fb", lat:37.7654, lng:-122.4110 },
+  { n:"Factory 93 Presents: Pegassi", d:"2026-07-31", t:"10:00 PM", v:"1015 Folsom", city:"San Francisco", co:"sf", cat:"Nightlife", src:"fb", lat:37.7780, lng:-122.4056 },
+  { n:"Reggae Down the River Tubing", d:"2026-08-01", t:"10:00 AM", v:"1329 Columbus Ave (meet-up)", city:"San Francisco", co:"sf", cat:"Music", src:"fb", lat:37.8060, lng:-122.4170 },
+  { n:"Jerry Day 2026", d:"2026-08-01", t:"11:00 AM", v:"Jerry Garcia Amphitheater, McLaren Park", city:"San Francisco", co:"sf", cat:"Music", src:"fb", lat:37.7195, lng:-122.4180 },
+  { n:"Deaf Beach Party — SF DNO Anniversary", d:"2026-08-01", t:"5:00 PM", v:"Ocean Beach Fire Pits", city:"San Francisco", co:"sf", cat:"Culture", src:"fb", lat:37.7530, lng:-122.5110 },
+  { n:"CORDUROY — The Pearl Jam Experience (10th anniv.)", d:"2026-08-01", t:"8:00 PM", v:"The Chapel", city:"San Francisco", co:"sf", cat:"Music", src:"fb", lat:37.7609, lng:-122.4212 },
+  { n:"Outside Lands 2026 (Aug 7–9)", d:"2026-08-07", t:"all day", v:"Golden Gate Park", city:"San Francisco", co:"sf", cat:"Music", src:"fb", lat:37.7694, lng:-122.4862 },
+
+  // ---- Santa Clara County ----
+  { n:"PROMISCUOUS — 2000s Club Bangers Party", d:"2026-07-31", t:"10:00 PM", v:"Fuze", city:"San Jose", co:"scl", cat:"Nightlife", lat:37.3357, lng:-121.8905 },
+  { n:"Rang De Basanti — Neon Edition ft. DJ Notorious (21+)", d:"2026-08-01", t:"10:00 PM", v:"Era Lounge", city:"San Jose", co:"scl", cat:"Nightlife", lat:37.3346, lng:-121.8887 },
+  { n:"Craft Cocktails Class: Shake, Stir & Sip", d:"2026-08-02", t:"2:00 PM", v:"Scarlett Cocktail Room", city:"San Jose", co:"scl", cat:"Food & Drink", lat:37.3333, lng:-121.8860 },
+  { n:"Hands-On Pizza Making: Pizza Napoletana", d:"2026-08-04", t:"6:00 PM", v:"Eataly Silicon Valley", city:"Santa Clara", co:"scl", cat:"Food & Drink", lat:37.3255, lng:-121.9460 },
+  { n:"Hands-On: Pasta Carbonara", d:"2026-08-05", t:"6:00 PM", v:"Eataly Silicon Valley", city:"Santa Clara", co:"scl", cat:"Food & Drink", lat:37.3255, lng:-121.9460 },
+  { n:"Sicilian Summer Festa", d:"2026-08-07", t:"6:00 PM", v:"Eataly Silicon Valley", city:"Santa Clara", co:"scl", cat:"Food & Drink", lat:37.3255, lng:-121.9460 },
+  { n:"Bollywood Arabian Night", d:"2026-08-07", t:"10:00 PM", v:"Opal Nightclub", city:"Mountain View", co:"scl", cat:"Nightlife", lat:37.3939, lng:-122.0797 },
+  { n:"James Garner — Tribute to Johnny Cash", d:"2026-08-21", t:"7:00 PM", v:"Sunnyvale Theater", city:"Sunnyvale", co:"scl", cat:"Music", lat:37.3547, lng:-122.0219 },
+  { n:"CHRIS LAKE", d:"2026-08-22", t:"2:00 PM", v:"Arena Green East", city:"San Jose", co:"scl", cat:"Music", lat:37.3346, lng:-121.9010 },
+  { n:"San Jose Singles Mixer 2026", d:"2026-08-22", t:"7:00 PM", v:"The Old Wagon Saloon & Grill", city:"San Jose", co:"scl", cat:"Food & Drink", lat:37.3372, lng:-121.8945 },
+  { n:"JOEY'S TOMATOES", d:"2026-08-23", t:"1:00 PM", v:"Ancora Vino by Enoteca La Storia", city:"San Jose", co:"scl", cat:"Food & Drink", lat:37.3369, lng:-121.8990 },
+  { n:"Noise Complaints — OHGEESY, KARRI + more", d:"2026-08-23", t:"2:00 PM", v:"Arena Green East", city:"San Jose", co:"scl", cat:"Music", lat:37.3346, lng:-121.9010 },
+  { n:"PARA SIEMPRE", d:"2026-09-12", t:"2:00 PM", v:"Discovery Meadow", city:"San Jose", co:"scl", cat:"Music", lat:37.3263, lng:-121.8925 },
+  { n:"Sleeping On Gems FEST — Kaytranada + more", d:"2026-09-13", t:"2:00 PM", v:"Discovery Meadow", city:"San Jose", co:"scl", cat:"Music", lat:37.3263, lng:-121.8925 },
+  { n:"Wild West Whiskey & Bites Stroll", d:"2026-09-18", t:"6:00 PM", v:"Downtown Los Altos", city:"Los Altos", co:"scl", cat:"Food & Drink", lat:37.3793, lng:-122.1171 },
+  { n:"San Jose Tech Mixer & Social (Tech / AI / Data)", d:"2026-07-31", t:"5:30 PM", v:"Loft Bar & Bistro", city:"San Jose", co:"scl", cat:"Business", lat:37.3350, lng:-121.8890 },
+  { n:"Starting Arts — Dare to Dream", d:"2026-07-31", t:"6:00 PM", v:"The Historic Hoover Theater", city:"San Jose", co:"scl", cat:"Culture", lat:37.3390, lng:-121.9250 },
+  { n:"Keizai Summer Networking in the Park", d:"2026-08-01", t:"12:00 PM", v:"Cuesta Park", city:"Mountain View", co:"scl", cat:"Business", lat:37.3800, lng:-122.0700 },
+  { n:"THE Day Club PT. II", d:"2026-08-01", t:"1:00 PM", v:"The Club at Los Gatos", city:"Los Gatos", co:"scl", cat:"Nightlife", lat:37.2270, lng:-121.9740 },
+  { n:"Matcha Magic Workshop: A Whiskful Journey", d:"2026-08-01", t:"4:00 PM", v:"Jiaren Cafe", city:"Santa Clara", co:"scl", cat:"Food & Drink", lat:37.3541, lng:-121.9552 },
+  { n:"Silicomedy Show: South Bay Standup!", d:"2026-08-01", t:"8:00 PM", v:"1522 S Winchester Blvd", city:"San Jose", co:"scl", cat:"Culture", lat:37.2990, lng:-121.9510 },
+  { n:"Free First Sunday at NUMU", d:"2026-08-02", t:"10:00 AM", v:"New Museum Los Gatos", city:"Los Gatos", co:"scl", cat:"Culture", lat:37.2220, lng:-121.9830 },
+  { n:"Clay & Connection — Handbuilding Workshop", d:"2026-08-02", t:"10:00 AM", v:"Jiaren Cafe", city:"Santa Clara", co:"scl", cat:"Culture", lat:37.3541, lng:-121.9552 },
+  { n:"Stillwater Resin Workshop: Pour & Play Tray Making", d:"2026-08-02", t:"2:00 PM", v:"Jiaren Cafe", city:"Santa Clara", co:"scl", cat:"Culture", lat:37.3541, lng:-121.9552 },
+  { n:"Earthwise — Carmen Staaf & Akira Tana (jazz)", d:"2026-08-02", t:"2:00 PM", v:"Palo Alto Art Center Auditorium", city:"Palo Alto", co:"scl", cat:"Music", lat:37.4440, lng:-122.1440 },
+  { n:"Iced Coffee Latte Candle Workshop", d:"2026-08-02", t:"4:00 PM", v:"Jiaren Cafe", city:"Santa Clara", co:"scl", cat:"Culture", lat:37.3541, lng:-121.9552 },
+  { n:"Les Play House Tour: San Jose", d:"2026-08-02", t:"5:00 PM", v:"Fuze", city:"San Jose", co:"scl", cat:"Nightlife", lat:37.3357, lng:-121.8905 },
+  { n:"Summer Social '26 — Jewish Bay Area", d:"2026-08-02", t:"6:00 PM", v:"570 Coleridge Ave", city:"Palo Alto", co:"scl", cat:"Food & Drink", lat:37.4380, lng:-122.1500 },
+  { n:"Psychedelic Sound Journey", d:"2026-08-02", t:"7:00 PM", v:"House of Sound — Alum Rock", city:"San Jose", co:"scl", cat:"Music", lat:37.3660, lng:-121.8250 },
+  { n:"Gujjubhai in Exchange Offer (Gujarati theatre)", d:"2026-08-02", t:"7:30 PM", v:"India Community Center", city:"Milpitas", co:"scl", cat:"Culture", lat:37.4190, lng:-121.8970 },
+  // Facebook — Santa Clara
+  { n:"Adam Ray: WHO IS ME Tour (comedy)", d:"2026-07-31", t:"7:30 PM", v:"San Jose Improv", city:"San Jose", co:"scl", cat:"Culture", src:"fb", lat:37.3330, lng:-121.8850 },
+  { n:"Sweet Revenge — My Chemical Romance Tribute + Kutie", d:"2026-07-31", t:"7:00 PM", v:"The Ritz", city:"San Jose", co:"scl", cat:"Music", src:"fb", lat:37.3308, lng:-121.8850 },
+  { n:"Family Movie Night Series", d:"2026-07-31", t:"7:00 PM", v:"Mitchell Park", city:"Palo Alto", co:"scl", cat:"Culture", src:"fb", lat:37.4180, lng:-122.1090 },
+  { n:"Salsa with Tim Michaels & Samy", d:"2026-07-31", t:"8:00 PM", v:"Cubberley Community Center", city:"Palo Alto", co:"scl", cat:"Nightlife", src:"fb", lat:37.4130, lng:-122.1120 },
+  { n:"Saturday Board Games Day", d:"2026-08-01", t:"10:00 AM", v:"Palo Alto Library — Downtown", city:"Palo Alto", co:"scl", cat:"Culture", src:"fb", lat:37.4450, lng:-122.1620 },
+  { n:"Tea & Tango", d:"2026-08-01", t:"3:45 PM", v:"1680 Bryant St", city:"Palo Alto", co:"scl", cat:"Music", src:"fb", lat:37.4380, lng:-122.1560 },
+  { n:"NAQAAB — Comedy Thriller Stage Play w/ Nawazuddin Siddiqui", d:"2026-08-01", t:"8:00 PM", v:"California Theatre", city:"San Jose", co:"scl", cat:"Culture", src:"fb", lat:37.3300, lng:-121.8890 },
+  { n:"Tai Chi with Nelson Ng", d:"2026-08-02", t:"10:00 AM", v:"Rinconada Library", city:"Palo Alto", co:"scl", cat:"Culture", src:"fb", lat:37.4440, lng:-122.1420 },
+  { n:"Grupo Frontera — Triste Pero Bien Tour", d:"2026-08-09", t:"8:00 PM", v:"SAP Center", city:"San Jose", co:"scl", cat:"Music", src:"fb", lat:37.3327, lng:-121.9012 },
+  { n:"MOUNT WESTMORE — Snoop Dogg, Ice Cube, E-40, Too $hort", d:"2026-08-21", t:"8:00 PM", v:"SAP Center", city:"San Jose", co:"scl", cat:"Music", src:"fb", lat:37.3327, lng:-121.9012 },
+  { n:"Wobbleland 2026 (Aug 21–22)", d:"2026-08-21", t:"evening", v:"San Jose Convention Center", city:"San Jose", co:"scl", cat:"Music", src:"fb", cc:1, lat:37.3290, lng:-121.8890 },
+  { n:"Palo Alto Festival of the Arts (Aug 22–23)", d:"2026-08-22", t:"all day", v:"University Avenue", city:"Palo Alto", co:"scl", cat:"Culture", src:"fb", lat:37.4480, lng:-122.1590 },
+  { n:"Sonu Nigam Live — Revolution Tour", d:"2026-08-29", t:"8:00 PM", v:"SAP Center", city:"San Jose", co:"scl", cat:"Music", src:"fb", lat:37.3327, lng:-121.9012 },
+  { n:"Andrea Bocelli — Romanza 30th Anniversary Tour", d:"2026-09-13", t:"8:00 PM", v:"SAP Center", city:"San Jose", co:"scl", cat:"Music", src:"fb", lat:37.3327, lng:-121.9012 },
+  { n:"Carin León — De Sonora Para El Mundo Tour", d:"2026-09-18", t:"8:00 PM", v:"SAP Center", city:"San Jose", co:"scl", cat:"Music", src:"fb", lat:37.3327, lng:-121.9012 },
+  { n:"Kany García — Puerta Abierta Tour", d:"2026-09-18", t:"8:00 PM", v:"San Jose Civic", city:"San Jose", co:"scl", cat:"Music", src:"fb", lat:37.3297, lng:-121.8887 },
+  { n:"Marco Antonio Solís — Tour Gratitud", d:"2026-09-26", t:"8:00 PM", v:"SAP Center", city:"San Jose", co:"scl", cat:"Music", src:"fb", lat:37.3327, lng:-121.9012 },
+
+  // ---- Alameda County ----
+  { n:"Summer Soul in the Park", d:"2026-08-01", t:"1:00 PM", v:"Preservation Park", city:"Oakland", co:"ala", cat:"Music", lat:37.8057, lng:-122.2745 },
+  { n:"HOT SUMMER NIGHTS — DJ Taybottlez & DJ Veyn", d:"2026-08-01", t:"10:00 PM", v:"811 Oakland", city:"Oakland", co:"ala", cat:"Nightlife", lat:37.8003, lng:-122.2735 },
+  { n:"Taste of Jack London 2026", d:"2026-08-15", t:"12:00 PM", v:"BLOC15, Jack London Square", city:"Oakland", co:"ala", cat:"Food & Drink", lat:37.7935, lng:-122.2760 },
+  { n:"Afrobeats at the Lake (8th annual)", d:"2026-08-22", t:"1:00 PM", v:"Snow Park, Lake Merritt", city:"Oakland", co:"ala", cat:"Music", lat:37.8069, lng:-122.2635 },
+  { n:"Mai Tai Day 2026", d:"2026-08-30", t:"3:00 PM", v:"Trader Vic's", city:"Emeryville", co:"ala", cat:"Food & Drink", shape:"sq", lat:37.8378, lng:-122.3125 },
+  { n:"6th Annual Bizerkeley Food Fest", d:"2026-09-06", t:"12:00 PM", v:"MLK Jr. Civic Center Park", city:"Berkeley", co:"ala", cat:"Food & Drink", lat:37.8693, lng:-122.2722 },
+  { n:"The Oakland Margarita Festival", d:"2026-09-13", t:"12:00 PM", v:"Drake's Dealership", city:"Oakland", co:"ala", cat:"Food & Drink", lat:37.8127, lng:-122.2665 },
+  { n:"23rd Annual Outsound New Music Summit", d:"2026-07-31", t:"7:00 PM", v:"The Finnish Hall", city:"Berkeley", co:"ala", cat:"Music", lat:37.8740, lng:-122.2900 },
+  { n:"Temescal Open Edible Gardens Day", d:"2026-08-01", t:"10:00 AM", v:"Temescal neighborhood", city:"Oakland", co:"ala", cat:"Food & Drink", lat:37.8340, lng:-122.2620 },
+  { n:"Summer Stack 2026 — Art Popup", d:"2026-08-01", t:"12:00 PM", v:"Faction Brewing", city:"Alameda", co:"ala", cat:"Culture", lat:37.7855, lng:-122.3080 },
+  { n:"STAR 101.3 Karaoke Bay Cruise", d:"2026-08-01", t:"1:00 PM", v:"LUXE Cruises", city:"Alameda", co:"ala", cat:"Music", lat:37.7900, lng:-122.2870 },
+  { n:"HELLO SOCA: Endless Summer Pardy", d:"2026-08-01", t:"3:00 PM", v:"Hello Stranger", city:"Oakland", co:"ala", cat:"Nightlife", lat:37.8060, lng:-122.2700 },
+  { n:"Black Futures Ball 2026", d:"2026-08-01", t:"6:00 PM", v:"BLOC15, Jack London Square", city:"Oakland", co:"ala", cat:"Culture", lat:37.7935, lng:-122.2760 },
+  { n:"The Jacka Birthday Sunset Cruise", d:"2026-08-01", t:"6:30 PM", v:"Jack London Square", city:"Oakland", co:"ala", cat:"Music", lat:37.7940, lng:-122.2780 },
+  { n:"Afro Rave ft. JUMBEE (Rema's official DJ)", d:"2026-08-01", t:"10:00 PM", v:"Starline Social Club", city:"Oakland", co:"ala", cat:"Nightlife", lat:37.8130, lng:-122.2720 },
+  { n:"Tandi Family Farms — Victory Garden Bus Tour", d:"2026-08-02", t:"11:00 AM", v:"Evergreen Nursery", city:"San Leandro", co:"ala", cat:"Culture", lat:37.7150, lng:-122.1560 },
+  { n:"BTS \"SWIM\" — Beginner K-pop Dance Class", d:"2026-08-02", t:"1:00 PM", v:"MKC Project", city:"Hayward", co:"ala", cat:"Culture", lat:37.6690, lng:-122.0810 },
+  { n:"How to Gatsby + ADSC Member Mixer", d:"2026-08-02", t:"3:00 PM", v:"California Historical Radio Society", city:"Alameda", co:"ala", cat:"Culture", lat:37.7710, lng:-122.2570 },
+  { n:"The Original Grown Folks Day Party", d:"2026-08-02", t:"3:00 PM", v:"Mimosa 2", city:"Oakland", co:"ala", cat:"Nightlife", lat:37.8050, lng:-122.2700 },
+  // Facebook — Alameda
+  { n:"Oakland Ballers — Grateful Dead Night", d:"2026-07-31", t:"6:30 PM", v:"Raimondi Park", city:"Oakland", co:"ala", cat:"Sports", src:"fb", lat:37.8130, lng:-122.2900 },
+  { n:"Richie Rich w/ Live Band", d:"2026-07-31", t:"7:30 PM", v:"Yoshi's, Jack London Square", city:"Oakland", co:"ala", cat:"Music", src:"fb", lat:37.7947, lng:-122.2780 },
+  { n:"Shelly Berg, solo (jazz piano)", d:"2026-07-31", t:"5:30 PM", v:"1728 San Pablo Ave", city:"Oakland", co:"ala", cat:"Music", src:"fb", url:"https://sf.funcheap.com/grammynominated-pianist-shelly-berg-jazz-legends-tribute-oakland/", lat:37.8110, lng:-122.2730 },
+  { n:"Dark Star Orchestra — Rex Foundation Benefit (2 nights)", d:"2026-07-31", t:"evening", v:"Greek Theatre, UC Berkeley", city:"Berkeley", co:"ala", cat:"Music", src:"fb", lat:37.8735, lng:-122.2540 },
+  { n:"Burning Down the House — Talking Heads Tribute", d:"2026-07-31", t:"8:00 PM", v:"The Starry Plough", city:"Berkeley", co:"ala", cat:"Music", src:"fb", lat:37.8555, lng:-122.2700 },
+  { n:"REPOSSESSED by Greg Lam (play)", d:"2026-07-31", t:"7:30 PM", v:"La Val's Subterranean, 1834 Euclid Ave", city:"Berkeley", co:"ala", cat:"Culture", src:"fb", lat:37.8755, lng:-122.2600 },
+  { n:"Josh Tatofi — Looking For Love Tour", d:"2026-07-31", t:"8:00 PM", v:"The UC Theatre, 2036 University Ave", city:"Berkeley", co:"ala", cat:"Music", src:"fb", lat:37.8720, lng:-122.2700 },
+  { n:"SIGH live (Cornerstone & Jaffe Events)", d:"2026-07-31", t:"9:00 PM", v:"Cornerstone Berkeley", city:"Berkeley", co:"ala", cat:"Music", src:"fb", lat:37.8680, lng:-122.2670 },
+  { n:"After Hours Vinyl Lounge", d:"2026-07-31", t:"9:30 PM", v:"2087 Addison St", city:"Berkeley", co:"ala", cat:"Nightlife", src:"fb", lat:37.8710, lng:-122.2690 },
+  { n:"Dark Star Orchestra — Night 2", d:"2026-08-01", t:"5:00 PM", v:"Greek Theatre, UC Berkeley", city:"Berkeley", co:"ala", cat:"Music", src:"fb", lat:37.8735, lng:-122.2540 },
+  { n:"Oakland Roots SC vs. Pittsburgh Riverhounds", d:"2026-08-01", t:"7:00 PM", v:"Oakland-Alameda County Coliseum", city:"Oakland", co:"ala", cat:"Sports", src:"fb", lat:37.7516, lng:-122.2005 },
+  { n:"Jill Scott — To Whom This May Concern Tour", d:"2026-08-06", t:"7:30 PM", v:"Paramount Theatre (also Aug 7)", city:"Oakland", co:"ala", cat:"Music", src:"fb", lat:37.8090, lng:-122.2680 },
+  { n:"Monster Jam", d:"2026-08-08", t:"12:00 PM", v:"Oakland Arena / Coliseum", city:"Oakland", co:"ala", cat:"Sports", src:"fb", lat:37.7503, lng:-122.2030 },
+  { n:"Tedeschi Trucks Band", d:"2026-08-12", t:"6:00 PM", v:"Greek Theatre, UC Berkeley", city:"Berkeley", co:"ala", cat:"Music", src:"fb", lat:37.8735, lng:-122.2540 },
+  { n:"Passion Pit", d:"2026-08-16", t:"7:30 PM", v:"Fox Theater", city:"Oakland", co:"ala", cat:"Music", src:"fb", lat:37.8080, lng:-122.2700 },
+  { n:"An Evening With David Byrne — Who Is the Sky Tour", d:"2026-08-25", t:"8:00 PM", v:"Greek Theatre, UC Berkeley", city:"Berkeley", co:"ala", cat:"Music", src:"fb", lat:37.8735, lng:-122.2540 },
+  { n:"Foster The People — Good Mourning Sunshine Tour", d:"2026-09-11", t:"8:00 PM", v:"Greek Theatre, UC Berkeley", city:"Berkeley", co:"ala", cat:"Music", src:"fb", lat:37.8735, lng:-122.2540 },
+  { n:"Thievery Corporation", d:"2026-09-12", t:"8:00 PM", v:"Fox Theater", city:"Oakland", co:"ala", cat:"Music", src:"fb", lat:37.8080, lng:-122.2700 },
+  { n:"MOJO BROOKZZ — Outta Pocket Tour", d:"2026-09-18", t:"7:30 PM", v:"Paramount Theatre", city:"Oakland", co:"ala", cat:"Culture", src:"fb", lat:37.8090, lng:-122.2680 },
+  { n:"Shreya Ghoshal — Unstoppable Tour", d:"2026-09-26", t:"8:00 PM", v:"Oakland Arena", city:"Oakland", co:"ala", cat:"Music", src:"fb", lat:37.7503, lng:-122.2030 },
+  { n:"Erykah Badu", d:"2026-09-27", t:"7:00 PM", v:"Greek Theatre, UC Berkeley", city:"Berkeley", co:"ala", cat:"Music", src:"fb", lat:37.8735, lng:-122.2540 },
+  // Tri-Valley (Livermore / Pleasanton / Dublin) — Eventbrite
+  { n:"The Cash Box Kings (blues)", d:"2026-08-01", t:"7:30 PM", v:"Almost Famous Wine Lounge", city:"Livermore", co:"ala", cat:"Music", lat:37.6819, lng:-121.7685 },
+  { n:"Honky Tonk Heroes — Live Music", d:"2026-08-01", t:"6:00 PM", v:"Las Positas Vineyards", city:"Livermore", co:"ala", cat:"Music", lat:37.6500, lng:-121.7440 },
+  { n:"Comedy @ FSWC", d:"2026-08-01", t:"7:00 PM", v:"First Street Wine Co", city:"Livermore", co:"ala", cat:"Culture", lat:37.6815, lng:-121.7670 },
+  { n:"An Evening with Carlos Reyes", d:"2026-08-02", t:"5:00 PM", v:"Posada Alta Cocina", city:"Livermore", co:"ala", cat:"Music", lat:37.6819, lng:-121.7700 },
+  { n:"Singles Mingle 50 & Up", d:"2026-08-02", t:"3:00 PM", v:"Cellar Door", city:"Pleasanton", co:"ala", cat:"Food & Drink", lat:37.6590, lng:-121.8760 },
+  { n:"Camp Scrap Day Camp (free, all ages)", d:"2026-08-02", t:"12:00 PM", v:"Cassa Jam, Niles District", city:"Fremont", co:"ala", cat:"Culture", lat:37.5770, lng:-121.9810 },
+  { n:"Paint Time: Textured Landscape of Flowers", d:"2026-08-02", t:"1:00 PM", v:"Artist Center", city:"Castro Valley", co:"ala", cat:"Culture", lat:37.6940, lng:-122.0860 },
+  { n:"Sha'Motown — Epic Motown Tribute", d:"2026-08-08", t:"7:30 PM", v:"Almost Famous Wine Lounge", city:"Livermore", co:"ala", cat:"Music", lat:37.6819, lng:-121.7685 },
+  { n:"The Viva Santana Show — Tribute to Santana", d:"2026-08-21", t:"7:30 PM", v:"Almost Famous Wine Lounge", city:"Livermore", co:"ala", cat:"Music", lat:37.6819, lng:-121.7685 },
+  { n:"The Boys of Summer (Music of the Eagles)", d:"2026-08-22", t:"7:30 PM", v:"Almost Famous Wine Lounge", city:"Livermore", co:"ala", cat:"Music", lat:37.6819, lng:-121.7685 },
+  { n:"Danielle Nicole Band", d:"2026-08-23", t:"7:30 PM", v:"Almost Famous Wine Lounge", city:"Livermore", co:"ala", cat:"Music", lat:37.6819, lng:-121.7685 },
+  { n:"Shwayze", d:"2026-08-28", t:"7:30 PM", v:"Almost Famous Wine Lounge", city:"Livermore", co:"ala", cat:"Music", lat:37.6819, lng:-121.7685 },
+  // Tri-Valley — Facebook
+  { n:"Pleasanton Concert in the Park", d:"2026-07-31", t:"7:00 PM", v:"Lions Wayside Park", city:"Pleasanton", co:"ala", cat:"Music", src:"fb", lat:37.6620, lng:-121.8770 },
+  { n:"Jinx Jones & the KingTones", d:"2026-07-31", t:"7:00 PM", v:"Blacksmith Square", city:"Livermore", co:"ala", cat:"Music", src:"fb", lat:37.6810, lng:-121.7660 },
+  { n:"Damn Dirty Apes", d:"2026-07-31", t:"7:30 PM", v:"Cellar Door", city:"Pleasanton", co:"ala", cat:"Music", src:"fb", lat:37.6590, lng:-121.8760 },
+  { n:"Arnez J Live (Fri & Sat)", d:"2026-07-31", t:"7:30 PM", v:"Tommy T's Comedy Club", city:"Pleasanton", co:"ala", cat:"Culture", src:"fb", lat:37.6930, lng:-121.9040 },
+  { n:"Dave \"Ouzo\" Land at the Farmers Market", d:"2026-08-01", t:"9:00 AM", v:"Pleasanton Farmers' Market", city:"Pleasanton", co:"ala", cat:"Music", src:"fb", lat:37.6625, lng:-121.8747 },
+  { n:"Young Innovator Shark Tank", d:"2026-08-01", t:"10:00 AM", v:"Livermore (downtown)", city:"Livermore", co:"ala", cat:"Culture", src:"fb", lat:37.6820, lng:-121.7680 },
+  { n:"3rd Annual Del Valle Summer Shindig — Mitch Polzak & The Royal Deuces", d:"2026-08-01", t:"5:00 PM", v:"Del Valle Winery", city:"Livermore", co:"ala", cat:"Music", src:"fb", lat:37.6480, lng:-121.7500 },
+  { n:"Potluck Picnic 2026", d:"2026-08-02", t:"11:30 AM", v:"4460 Tassajara Rd", city:"Dublin", co:"ala", cat:"Food & Drink", src:"fb", lat:37.7060, lng:-121.8680 },
+  { n:"Rock-Solid Recall — Dog Training Workshop", d:"2026-08-02", t:"1:00 PM", v:"4651 Gleason Dr", city:"Dublin", co:"ala", cat:"Culture", src:"fb", lat:37.7050, lng:-121.8560 },
+  { n:"Tuesday Tunes w/ Ruff Stock (free)", d:"2026-08-04", t:"6:45 PM", v:"The Bankhead plaza", city:"Livermore", co:"ala", cat:"Music", src:"fb", lat:37.6822, lng:-121.7690 },
+  { n:"Free Summer Movies — The Iron Giant", d:"2026-08-04", t:"10:00 AM", v:"The Vine, 1722 First St", city:"Livermore", co:"ala", cat:"Culture", src:"fb", lat:37.6817, lng:-121.7672 },
+  { n:"Damage Inc — Cliff Burton–era Metallica Tribute", d:"2026-08-07", t:"6:00 PM", v:"Headyworks", city:"Livermore", co:"ala", cat:"Music", src:"fb", lat:37.6860, lng:-121.7610 },
+  { n:"East Bay Grooveline — Estate Concert", d:"2026-08-15", t:"5:00 PM", v:"Cedar Mountain Rd (private estate)", city:"Livermore", co:"ala", cat:"Music", src:"fb", lat:37.6300, lng:-121.6900 },
+  { n:"Bamville Card Show", d:"2026-08-15", t:"10:00 AM", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Culture", src:"fb", cc:1, lat:37.6540, lng:-121.8880 },
+  { n:"Cars and Coffee Livermore", d:"2026-08-22", t:"9:00 AM", v:"Livermore Premium Outlets", city:"Livermore", co:"ala", cat:"Culture", src:"fb", lat:37.6990, lng:-121.8420 },
+  { n:"Masters of Illusion", d:"2026-08-22", t:"8:00 PM", v:"The Bankhead Theater", city:"Livermore", co:"ala", cat:"Culture", src:"fb", lat:37.6822, lng:-121.7690 },
+  { n:"Opening Night at The Bankhead — Lyle Lovett (fundraiser)", d:"2026-08-29", t:"5:00 PM", v:"The Bankhead Theater", city:"Livermore", co:"ala", cat:"Music", src:"fb", lat:37.6822, lng:-121.7690 },
+  { n:"Thrift Fest", d:"2026-09-19", t:"12:00 PM", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Culture", src:"fb", cc:1, lat:37.6540, lng:-121.8880 },
+  { n:"BICS Ganesh Chaturthi Mela", d:"2026-09-20", t:"10:00 AM", v:"Emerald Glen Park", city:"Dublin", co:"ala", cat:"Culture", src:"fb", lat:37.7100, lng:-121.8750 },
+  { n:"St. Raymond Fall Festival", d:"2026-10-03", t:"6:00 PM", v:"11555 Shannon Ave", city:"Dublin", co:"ala", cat:"Culture", src:"fb", lat:37.7020, lng:-121.9350 },
+  { n:"626 Night Market — Bay Area (Oct 9–11)", d:"2026-10-09", t:"evening", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Food & Drink", src:"fb", cc:1, lat:37.6540, lng:-121.8880 },
+  { n:"Pleasanton Harvest Festival (Oct 23–25)", d:"2026-10-23", t:"all day", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Culture", src:"fb", cc:1, lat:37.6540, lng:-121.8880 },
+
+  // ---- San Mateo County ----
+  { n:"Knob Creek Whiskey Dinner", d:"2026-08-04", t:"6:30 PM", v:"The Village Bakery", city:"Woodside", co:"smt", cat:"Food & Drink", lat:37.4290, lng:-122.2540 },
+  { n:"El Malilla — Tour Tu Maliante Bebe", d:"2026-08-07", t:"9:00 PM", v:"Maya Nightclub", city:"Redwood City", co:"smt", cat:"Music", lat:37.4863, lng:-122.2320 },
+  { n:"Mini Kiss (KISS tribute)", d:"2026-08-08", t:"8:00 PM", v:"Longboard Bar & Venue", city:"Pacifica", co:"smt", cat:"Music", lat:37.6096, lng:-122.4890 },
+  { n:"West Coast Asian Foodie Festival (Aug 15–16)", d:"2026-08-15", t:"10:00 AM", v:"San Mateo County Event Center", city:"San Mateo", co:"smt", cat:"Food & Drink", cc:1, lat:37.5450, lng:-122.2988 },
+  { n:"A Journey Through Cocktail History — Taste & Class", d:"2026-08-15", t:"2:00 PM", v:"Timber & Salt", city:"Redwood City", co:"smt", cat:"Food & Drink", lat:37.4857, lng:-122.2296 },
+  { n:"Magic of the Coastside Lobsterfest", d:"2026-08-22", t:"5:00 PM", v:"I.D.E.S. Portuguese Hall", city:"Half Moon Bay", co:"smt", cat:"Food & Drink", lat:37.4600, lng:-122.4290 },
+  { n:"Duckhorn Wine Dinner", d:"2026-08-27", t:"7:00 PM", v:"Kincaid's Fish, Chop & Steakhouse", city:"Burlingame", co:"smt", cat:"Food & Drink", lat:37.5926, lng:-122.3576 },
+  { n:"Duckhorn Wine Dinner", d:"2026-08-27", t:"7:00 PM", v:"Horatio's", city:"San Mateo", co:"smt", cat:"Food & Drink", lat:37.5760, lng:-122.3110 },
+  { n:"Tim Flannery & The Lunatic Fringe w/ Jake Peavy", d:"2026-08-27", t:"7:00 PM", v:"Old Princeton Landing", city:"Half Moon Bay", co:"smt", cat:"Music", lat:37.5039, lng:-122.4823 },
+  { n:"Grateful Thursdays w/ Alex Jordan & Friends", d:"2026-08-27", t:"7:30 PM", v:"Club Fox", city:"Redwood City", co:"smt", cat:"Music", lat:37.4870, lng:-122.2305 },
+  { n:"Country Dance Day 2026", d:"2026-08-29", t:"12:30 PM", v:"Long Branch Saloon & Farms", city:"Half Moon Bay", co:"smt", cat:"Music", lat:37.4085, lng:-122.4210 },
+  { n:"The Mother Hips — Night 2", d:"2026-08-29", t:"6:30 PM", v:"Old Princeton Landing", city:"Half Moon Bay", co:"smt", cat:"Music", lat:37.5039, lng:-122.4823 },
+  { n:"WITCH", d:"2026-08-30", t:"4:30 PM", v:"Old Princeton Landing", city:"Half Moon Bay", co:"smt", cat:"Music", lat:37.5039, lng:-122.4823 },
+  { n:"Super ENOTECA100 — Barolo, Brunello & more", d:"2026-09-19", t:"12:00 PM", v:"Donato Enoteca", city:"Redwood City", co:"smt", cat:"Food & Drink", lat:37.4849, lng:-122.2270 },
+  { n:"Ramon Moreno School of Ballet — Summer Gala", d:"2026-08-01", t:"2:00 PM", v:"Menlo-Atherton Performing Arts Center", city:"Atherton", co:"smt", cat:"Culture", lat:37.4640, lng:-122.1960 },
+  { n:"ZEBOP! — The Music of Santana + Los Kimberos", d:"2026-08-01", t:"7:00 PM", v:"Club Fox", city:"Redwood City", co:"smt", cat:"Music", lat:37.4870, lng:-122.2305 },
+  { n:"Perry Sings Sinatra — Tribute Dinner Show", d:"2026-08-01", t:"7:00 PM", v:"Alhambra Irish House", city:"Redwood City", co:"smt", cat:"Music", lat:37.4860, lng:-122.2290 },
+  { n:"Sábado de Quebradita — Banda Zeta", d:"2026-08-01", t:"9:00 PM", v:"Maya Nightclub", city:"Redwood City", co:"smt", cat:"Music", lat:37.4863, lng:-122.2320 },
+  { n:"Lay M Low — Summertime Show N Shine & Hop", d:"2026-08-02", t:"8:00 AM", v:"400 Seaport Blvd", city:"Redwood City", co:"smt", cat:"Culture", lat:37.4930, lng:-122.2110 },
+  { n:"Pacifica Runners Tiki Trot 5K/10K", d:"2026-08-02", t:"8:30 AM", v:"Pacifica Pier, Beach Blvd at Paloma", city:"Pacifica", co:"smt", cat:"Culture", shape:"sq", lat:37.6330, lng:-122.4930 },
+  // Facebook — San Mateo
+  { n:"Bachata 4-Week Series Workshop (kickoff)", d:"2026-08-01", t:"1:00 PM", v:"217 S Claremont St", city:"San Mateo", co:"smt", cat:"Nightlife", src:"fb", lat:37.5640, lng:-122.3260 },
+  { n:"Aashi's Rangapuja (dance)", d:"2026-08-02", t:"2:30 PM", v:"CSM Theatre, College of San Mateo", city:"San Mateo", co:"smt", cat:"Culture", src:"fb", lat:37.5340, lng:-122.3350 },
+  { n:"EzMotion Band", d:"2026-08-07", t:"7:30 PM", v:"Peninsula Italian American Social Club", city:"San Mateo", co:"smt", cat:"Music", src:"fb", lat:37.5660, lng:-122.3240 },
+  { n:"Silicon Valley Robotics Fair (Aug 8–9)", d:"2026-08-08", t:"all day", v:"San Mateo County Event Center", city:"San Mateo", co:"smt", cat:"Culture", src:"fb", cc:1, lat:37.5450, lng:-122.2988 },
+  { n:"Book Signing with Jim Madrid", d:"2026-08-08", t:"1:00 PM", v:"Barnes & Noble", city:"San Mateo", co:"smt", cat:"Culture", src:"fb", lat:37.5360, lng:-122.2990 },
+  { n:"The Folk Aakhyan Drama", d:"2026-08-09", t:"5:00 PM", v:"San Mateo Performing Arts Center", city:"San Mateo", co:"smt", cat:"Culture", src:"fb", lat:37.5490, lng:-122.3170 },
+  { n:"Hello Kitty Cafe Truck West", d:"2026-08-22", t:"10:00 AM", v:"Hillsdale Shopping Center", city:"San Mateo", co:"smt", cat:"Food & Drink", src:"fb", lat:37.5380, lng:-122.3000 },
+  { n:"JSTSTANCE car show", d:"2026-08-22", t:"5:00 PM", v:"San Mateo County Event Center", city:"San Mateo", co:"smt", cat:"Culture", src:"fb", cc:1, lat:37.5450, lng:-122.2988 },
+  { n:"Creation: From Dashavatar to Elton John", d:"2026-09-13", t:"4:00 PM", v:"CSM Theatre, College of San Mateo", city:"San Mateo", co:"smt", cat:"Culture", src:"fb", lat:37.5340, lng:-122.3350 },
+  { n:"18th Annual GO2 Bay Area 5K Walk/Run", d:"2026-09-20", t:"9:00 AM", v:"Seal Point Park", city:"San Mateo", co:"smt", cat:"Sports", src:"fb", lat:37.5720, lng:-122.3040 },
+
+  // ---- 19hz (electronic music) additions ----
+  { n:"Coffee & House 5k ft. DJ Toonin' (free)", d:"2026-08-01", t:"8:30 AM", v:"Playback Coffee", city:"San Jose", co:"scl", cat:"Music", src:"hz", lat:37.3350, lng:-121.8900 },
+  { n:"Coffee & Beats: deep/tech house (free)", d:"2026-08-01", t:"11:00 AM", v:"Hedge Coffee", city:"San Francisco", co:"sf", cat:"Music", src:"hz", lat:37.7620, lng:-122.3890 },
+  { n:"Atomic Groove — funky house/disco/DnB (free, 18+)", d:"2026-08-01", t:"12:00 PM", v:"Drake's Brewing Company", city:"San Leandro", co:"ala", cat:"Music", src:"hz", lat:37.6930, lng:-122.1810 },
+  { n:"Tunes & Tides — open decks (free)", d:"2026-08-01", t:"1:00 PM", v:"Ocean Beach", city:"San Francisco", co:"sf", cat:"Music", src:"hz", lat:37.7594, lng:-122.5107 },
+  { n:"Hoochie House — house/breaks/ghettotech ($5–10)", d:"2026-08-01", t:"3:00 PM", v:"El Rio", city:"San Francisco", co:"sf", cat:"Nightlife", src:"hz", lat:37.7470, lng:-122.4193 },
+  { n:"Block Party at Claude Lane (free, 21+)", d:"2026-08-01", t:"4:00 PM", v:"Shotski's Alpine Lodge, Claude Lane", city:"San Francisco", co:"sf", cat:"Nightlife", src:"hz", lat:37.7900, lng:-122.4040 },
+  { n:"Afrobeats University: Summer Session ($15)", d:"2026-08-01", t:"4:00 PM", v:"Continental Club", city:"Oakland", co:"ala", cat:"Nightlife", src:"hz", lat:37.8060, lng:-122.2900 },
+  { n:"Homebound SF — amapiano/afro house", d:"2026-08-01", t:"4:00 PM", v:"Audio", city:"San Francisco", co:"sf", cat:"Nightlife", src:"hz", lat:37.7717, lng:-122.4136 },
+  { n:"Space Riderz rooftop — house (free b4 7)", d:"2026-08-01", t:"5:00 PM", v:"Mad Oak Rooftop", city:"Oakland", co:"ala", cat:"Nightlife", src:"hz", lat:37.7990, lng:-122.2620 },
+  { n:"Frolic — funky/tech house ($15–20)", d:"2026-08-01", t:"7:00 PM", v:"The Great Northern", city:"San Francisco", co:"sf", cat:"Nightlife", src:"hz", lat:37.7676, lng:-122.4062 },
+  { n:"f.Mph + Pateka + Dibiase (Smartbomb)", d:"2026-08-01", t:"8:00 PM", v:"Ivy Room", city:"Albany", co:"ala", cat:"Music", src:"hz", lat:37.8890, lng:-122.3080 },
+  { n:"Hashman Deejay — deep house", d:"2026-08-01", t:"9:00 PM", v:"Bar Part Time", city:"San Francisco", co:"sf", cat:"Nightlife", src:"hz", lat:37.7684, lng:-122.4210 },
+  { n:"Remixology ($20)", d:"2026-08-01", t:"9:00 PM", v:"Public Works", city:"San Francisco", co:"sf", cat:"Nightlife", src:"hz", lat:37.7690, lng:-122.4200 },
+  { n:"Dancing w/ Friends Vol. 2 ($20–26)", d:"2026-08-01", t:"9:00 PM", v:"Public Works Loft", city:"San Francisco", co:"sf", cat:"Nightlife", src:"hz", lat:37.7690, lng:-122.4200 },
+  { n:"Deadhead Disco — Jerry's Birthday ($23)", d:"2026-08-01", t:"9:00 PM", v:"Rickshaw Stop", city:"San Francisco", co:"sf", cat:"Nightlife", src:"hz", lat:37.7765, lng:-122.4196 },
+  { n:"DJ Guan & Friends — jersey club/baile funk", d:"2026-08-01", t:"9:00 PM", v:"Mothership", city:"San Francisco", co:"sf", cat:"Nightlife", src:"hz", lat:37.7550, lng:-122.4190 },
+  { n:"Ero808 — tech house ($15–25)", d:"2026-08-01", t:"9:00 PM", v:"The Midway", city:"San Francisco", co:"sf", cat:"Nightlife", src:"hz", lat:37.7480, lng:-122.3870 },
+  { n:"Flux Aeterna — funk/disco/techno ($10–15)", d:"2026-08-01", t:"9:00 PM", v:"Underground SF", city:"San Francisco", co:"sf", cat:"Nightlife", src:"hz", lat:37.7720, lng:-122.4290 },
+  { n:"Flowstate SF — house (free w/ RSVP)", d:"2026-08-01", t:"9:00 PM", v:"Club Waziema", city:"San Francisco", co:"sf", cat:"Nightlife", src:"hz", lat:37.7740, lng:-122.4380 },
+  { n:"Bass n Babes: So Sus + more ($11–30)", d:"2026-08-01", t:"9:00 PM", v:"Monarch", city:"San Francisco", co:"sf", cat:"Nightlife", src:"hz", lat:37.7810, lng:-122.4080 },
+  { n:"Steam Towel Party ($18–34)", d:"2026-08-01", t:"9:00 PM", v:"The Stud", city:"San Francisco", co:"sf", cat:"Nightlife", src:"hz", lat:37.7757, lng:-122.4090 },
+  { n:"Sard (Live) — techno (Bodyheat x Braket, $25)", d:"2026-08-01", t:"9:00 PM", v:"F8, 1192 Folsom", city:"San Francisco", co:"sf", cat:"Nightlife", src:"hz", lat:37.7750, lng:-122.4090 },
+  { n:"Subpressure — happy hardcore/hardstyle ($20–25)", d:"2026-08-01", t:"9:30 PM", v:"TBA venue (downtown)", city:"San Jose", co:"scl", cat:"Nightlife", src:"hz", lat:37.3350, lng:-121.8890 },
+  { n:"Tomu DJ x Raven — club/footwork", d:"2026-08-01", t:"9:30 PM", v:"Arcana", city:"San Francisco", co:"sf", cat:"Nightlife", src:"hz", lat:37.7700, lng:-122.4100 },
+  { n:"620 Jones After Party ($17)", d:"2026-08-01", t:"9:30 PM", v:"Audio", city:"San Francisco", co:"sf", cat:"Nightlife", src:"hz", lat:37.7717, lng:-122.4136 },
+  { n:"After Life — darkwave/industrial ($10–22)", d:"2026-08-01", t:"9:30 PM", v:"DNA Lounge", city:"San Francisco", co:"sf", cat:"Nightlife", src:"hz", lat:37.7710, lng:-122.4127 },
+  { n:"William Kiss + Sagmo + Issa — big room techno", d:"2026-08-01", t:"10:00 PM", v:"Halcyon", city:"San Francisco", co:"sf", cat:"Nightlife", src:"hz", lat:37.7710, lng:-122.4140 },
+  { n:"Psfytech Immersion — house/psytech ($45, till 6am)", d:"2026-08-01", t:"10:00 PM", v:"Continental Club", city:"Oakland", co:"ala", cat:"Nightlife", src:"hz", lat:37.8060, lng:-122.2900 },
+  { n:"Coffee & Beats Sunday: deep/minimal house (free)", d:"2026-08-02", t:"11:00 AM", v:"Hedge Coffee", city:"San Francisco", co:"sf", cat:"Music", src:"hz", lat:37.7620, lng:-122.3890 },
+  { n:"Beyond The Fence — Playa Bound Trunk Show (free w/ RSVP)", d:"2026-08-02", t:"11:00 AM", v:"The Midway", city:"San Francisco", co:"sf", cat:"Culture", src:"hz", url:"https://sf.funcheap.com/18th-annual-playa-bound-trunk-show-midway/", lat:37.7480, lng:-122.3870 },
+  { n:"TouchGrass at the Lake — open decks (free, all ages)", d:"2026-08-02", t:"12:00 PM", v:"Lake Merritt", city:"Oakland", co:"ala", cat:"Music", src:"hz", lat:37.8040, lng:-122.2620 },
+  { n:"Sindustry Sundays — disco/deep house (free)", d:"2026-08-02", t:"10:00 PM", v:"Butter", city:"San Francisco", co:"sf", cat:"Nightlife", src:"hz", lat:37.7712, lng:-122.4135 },
+
+  // ---- Funcheap additions ----
+  { n:"Friday Nights at OMCA w/ Off the Grid (free)", d:"2026-07-31", t:"5:00 PM", v:"Oakland Museum of California", city:"Oakland", co:"ala", cat:"Food & Drink", src:"fc", url:"https://sf.funcheap.com/friday-nights-at-omca-with-off-the-grid-block-party-djs-oakland-110/", lat:37.7986, lng:-122.2646 },
+  { n:"Battle of the Decades DJ Party (free w/ RSVP)", d:"2026-07-31", t:"5:00 PM", v:"Monroe, North Beach", city:"San Francisco", co:"sf", cat:"Nightlife", src:"fc", url:"https://sf.funcheap.com/1-drink-fridays-battle-of-the-decades-dj-party-north-beach-248/", lat:37.7980, lng:-122.4060 },
+  { n:"Music on the Square — free concert", d:"2026-07-31", t:"6:00 PM", v:"Courthouse Square", city:"Redwood City", co:"smt", cat:"Music", src:"fc", url:"https://sf.funcheap.com/20th-annual-music-on-the-square-free-concerts-every-friday-redwood-city-8/", lat:37.4870, lng:-122.2290 },
+  { n:"San Francisco Critical Mass (free)", d:"2026-07-31", t:"6:00 PM", v:"Embarcadero Plaza", city:"San Francisco", co:"sf", cat:"Culture", src:"fc", url:"https://sf.funcheap.com/san-francisco-critical-mass-last-friday-of-the-month-14/", lat:37.7955, lng:-122.3937 },
+  { n:"Cosmo Con: Sci-Fi Night Out ($24)", d:"2026-07-31", t:"6:00 PM", v:"Chabot Space & Science Center", city:"Oakland", co:"ala", cat:"Culture", src:"fc", url:"https://sf.funcheap.com/cosmo-con-scifi-night-costume-contest-cantina-bar-oakland/", lat:37.8190, lng:-122.1810 },
+  { n:"Nihonmachi Street Fair (free)", d:"2026-08-01", t:"11:00 AM", v:"Japantown Peace Plaza", city:"San Francisco", co:"sf", cat:"Culture", src:"fc", url:"https://sf.funcheap.com/sfs-2026-nihonmachi-street-fair-in-japantown-august-1-2/", lat:37.7850, lng:-122.4300 },
+  { n:"Renegade Craft Summer Fair (free, also Sun)", d:"2026-08-01", t:"11:00 AM", v:"Fort Mason Center", city:"San Francisco", co:"sf", cat:"Culture", src:"fc", url:"https://sf.funcheap.com/renegade-craft-fair-at-fort-mason-center-august-2-3/", lat:37.8060, lng:-122.4310 },
+  { n:"Free Museum Day: de Young & Legion of Honor (Bay Area residents)", d:"2026-08-01", t:"9:30 AM", v:"de Young Museum", city:"San Francisco", co:"sf", cat:"Culture", src:"fc", url:"https://sf.funcheap.com/free-de-young-museum-day-for-bay-area-residents-every-saturday-329/", lat:37.7715, lng:-122.4687 },
+  { n:"Living History Day at Fort Point (free)", d:"2026-08-01", t:"10:00 AM", v:"Fort Point National Historic Site", city:"San Francisco", co:"sf", cat:"Culture", src:"fc", url:"https://sf.funcheap.com/step-1860s-sfs-living-history-day-fort-point-2026/", lat:37.8105, lng:-122.4770 },
+  { n:"Space Week Festival: Meet an Astronaut ($19–24)", d:"2026-08-01", t:"10:00 AM", v:"Chabot Space & Science Center", city:"Oakland", co:"ala", cat:"Culture", src:"fc", url:"https://sf.funcheap.com/space-week-festival-meet-astronaut-nasa-demos-chabot-space-center/", lat:37.8190, lng:-122.1810 },
+  { n:"Free Hot Wheels Legends Tour", d:"2026-08-01", t:"8:00 AM", v:"Union Landing area", city:"Union City", co:"ala", cat:"Culture", src:"fc", url:"https://sf.funcheap.com/free-hot-wheels-legends-bay-area-tour-union-city/", lat:37.6040, lng:-122.0650 },
+  { n:"Pub in the Park — inflatables & picnic party (free)", d:"2026-08-01", t:"11:00 AM", v:"Red Morton Park", city:"Redwood City", co:"smt", cat:"Food & Drink", src:"fc", url:"https://sf.funcheap.com/2026-pub-in-the-park-giant-inflatables-summer-picnic-party-redwood-city-2/", lat:37.4790, lng:-122.2380 },
+  { n:"ChoreoFest Outdoor Dance Festival — Day 2 (free)", d:"2026-08-01", t:"2:00 PM", v:"Yerba Buena Gardens", city:"San Francisco", co:"sf", cat:"Culture", src:"fc", url:"https://sf.funcheap.com/sfs-choreofest-outdoor-dance-festival-day-two-yerba-buena-gardens-festival-2026/", lat:37.7850, lng:-122.4023 },
+  { n:"Golden Gate Comedy Night (free w/ RSVP, 21+)", d:"2026-08-01", t:"7:00 PM", v:"The Function", city:"San Francisco", co:"sf", cat:"Culture", src:"fc", url:"https://sf.funcheap.com/golden-gate-comedy-night-sfs-most-intimate-comedy-club-54/", lat:37.7870, lng:-122.4060 },
+  { n:"Maritime Day — free boat rides & festival (Marin bonus)", d:"2026-08-01", t:"10:00 AM", v:"Galilee Harbor", city:"Sausalito", co:"sf", cat:"Culture", src:"fc", url:"https://sf.funcheap.com/maritime-day-2026-free-bay-boat-rides-waterfront-artmusic-festival-sausalito/", lat:37.8580, lng:-122.4850 },
+  { n:"Nihonmachi Street Fair — Day 2 (free)", d:"2026-08-02", t:"11:00 AM", v:"Japantown Peace Plaza", city:"San Francisco", co:"sf", cat:"Culture", src:"fc", url:"https://sf.funcheap.com/sfs-2026-nihonmachi-street-fair-in-japantown-august-1-2-2/", lat:37.7850, lng:-122.4300 },
+  { n:"Renegade Craft Summer Fair — Day 2 (free)", d:"2026-08-02", t:"11:00 AM", v:"Fort Mason Center", city:"San Francisco", co:"sf", cat:"Culture", src:"fc", url:"https://sf.funcheap.com/renegade-craft-fair-at-fort-mason-center-august-2-3-2/", lat:37.8060, lng:-122.4310 },
+  { n:"Asian Art Museum — Free First Sunday", d:"2026-08-02", t:"10:00 AM", v:"Asian Art Museum", city:"San Francisco", co:"sf", cat:"Culture", src:"fc", url:"https://sf.funcheap.com/asian-art-museum-free-admission-day-every-first-sunday-63/", lat:37.7800, lng:-122.4160 },
+  { n:"OMCA Free First Sunday", d:"2026-08-02", t:"11:00 AM", v:"Oakland Museum of California", city:"Oakland", co:"ala", cat:"Culture", src:"fc", url:"https://sf.funcheap.com/oakland-museum-of-californias-free-first-sundays-omca-58/", lat:37.7986, lng:-122.2646 },
+  { n:"Head West Marketplace at the Ferry Building (free)", d:"2026-08-02", t:"11:00 AM", v:"Ferry Building", city:"San Francisco", co:"sf", cat:"Food & Drink", src:"fc", url:"https://sf.funcheap.com/sfs-head-west-marketplace-at-the-ferry-building-every-1st-sunday-5/", lat:37.7957, lng:-122.3934 },
+  { n:"55th Lion + Dragon Dance Parade (free)", d:"2026-08-02", t:"11:00 AM", v:"Chinatown", city:"San Francisco", co:"sf", cat:"Culture", src:"fc", url:"https://sf.funcheap.com/free-55th-lion-dragon-dance-parade-leungs-white-crane-anniversary-chinatown/", lat:37.7940, lng:-122.4070 },
+  { n:"Lindy in the Park — swing dance party (free)", d:"2026-08-02", t:"11:00 AM", v:"JFK Drive, Golden Gate Park", city:"San Francisco", co:"sf", cat:"Music", src:"fc", url:"https://sf.funcheap.com/lindy-in-the-park-swing-dance-party-golden-gate-park-264/", lat:37.7712, lng:-122.4660 },
+  { n:"Castro Art Mart — mini block party (free)", d:"2026-08-02", t:"11:00 AM", v:"Market & Noe", city:"San Francisco", co:"sf", cat:"Culture", src:"fc", url:"https://sf.funcheap.com/castro-art-mart-mini-block-party-on-noe-st-every-first-sunday-49/", lat:37.7630, lng:-122.4330 },
+  { n:"Baby Rave Oakland ($25)", d:"2026-08-02", t:"10:00 AM", v:"Oakland", city:"Oakland", co:"ala", cat:"Culture", src:"fc", url:"https://sf.funcheap.com/baby-rave-oakland/", lat:37.8040, lng:-122.2710 },
+  { n:"Whale's Tail beer/wine garden + live music (free)", d:"2026-08-02", t:"12:00 PM", v:"Golden Gate Park", city:"San Francisco", co:"sf", cat:"Food & Drink", src:"fc", url:"https://sf.funcheap.com/golden-gate-park-the-whales-tail-beer-wine-garden-live-music-summer-2026-18/", lat:37.7695, lng:-122.4560 },
+  { n:"Drag Bingo Brunch (free)", d:"2026-08-02", t:"12:00 PM", v:"San Francisco", city:"San Francisco", co:"sf", cat:"Food & Drink", src:"fc", url:"https://sf.funcheap.com/drag-bingo-brunch-4/", lat:37.7700, lng:-122.4200 },
+  { n:"Golden Gate Park Sunday Roller Disco (free)", d:"2026-08-02", t:"1:00 PM", v:"Skatin' Place, Golden Gate Park", city:"San Francisco", co:"sf", cat:"Music", src:"fc", url:"https://sf.funcheap.com/golden-gate-park-sunday-roller-disco-party-sf-289/", lat:37.7717, lng:-122.4550 },
+  { n:"GG Park Band — free Symphony in the Park", d:"2026-08-02", t:"1:00 PM", v:"Spreckels Temple of Music (Bandshell)", city:"San Francisco", co:"sf", cat:"Music", src:"fc", url:"https://sf.funcheap.com/golden-gate-park-bands-symphony-in-the-park/", lat:37.7700, lng:-122.4665 },
+  { n:"Hairspray — The Broadway Musical ($47)", d:"2026-08-02", t:"2:00 PM", v:"San Francisco Playhouse", city:"San Francisco", co:"sf", cat:"Culture", src:"fc", url:"https://sf.funcheap.com/5-off-tix-hairspray-the-broadway-musical-live-in-sf-july-10-sept-12-3/", lat:37.7880, lng:-122.4100 },
+
+  // ---- Convention centers & fairgrounds ----
+  { n:"Stussy Warehouse Sale (Aug 1–2, timed entry via Eventbrite)", d:"2026-08-01", t:"10:00 AM", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Culture", src:"web", cc:1, lat:37.6540, lng:-121.8880 },
+  { n:"NorCal Barber Expo", d:"2026-08-16", t:"8:00 AM", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Culture", src:"web", cc:1, lat:37.6540, lng:-121.8880 },
+  { n:"Goodguys 39th West Coast Nationals — 3,000+ hot rods (Aug 21–23)", d:"2026-08-21", t:"8:00 AM", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Culture", src:"web", cc:1, lat:37.6540, lng:-121.8880 },
+
+  // ---- Tiki radar ----
+  { n:"Dirty Pop! Bops & Throwbacks (tiki bar dance night)", d:"2026-08-07", t:"10:00 PM", v:"Bamboo Hut", city:"San Francisco", co:"sf", cat:"Nightlife", src:"eb", shape:"sq", lat:37.7980, lng:-122.4058 },
+  { n:"South Seas Swing 2026 (tiki + swing on an aircraft carrier)", d:"2026-08-15", t:"7:00 PM", v:"USS Hornet Museum", city:"Alameda", co:"ala", cat:"Music", src:"eb", shape:"sq", lat:37.7726, lng:-122.3025 },
+  { n:"Alameda Tiki Noir Market (The Menagerie)", d:"2026-08-23", t:"1:00 PM", v:"Forbidden Island", city:"Alameda", co:"ala", cat:"Culture", src:"eb", shape:"sq", lat:37.7645, lng:-122.2440 },
+  { n:"Tiki Vendors — California Rum Fest 2026", d:"2026-09-19", t:"2:00 PM", v:"Trader Vic's (parking lot)", city:"Emeryville", co:"ala", cat:"Food & Drink", src:"eb", shape:"sq", lat:37.8378, lng:-122.3125 },
+  { n:"Autumnal Tiki", d:"2026-09-21", t:"7:00 PM", v:"The Alembic", city:"San Francisco", co:"sf", cat:"Food & Drink", src:"eb", shape:"sq", lat:37.7695, lng:-122.4460 },
+
+  // ---- Video game tournament radar ----
+  { n:"Guildhouse Fighters — Thursday FGC weekly (SF6 + Melee, 6 PM doors)", d:"2026-08-06", t:"6:00 PM", v:"Guildhouse, 420 S 1st St", city:"San Jose", co:"scl", cat:"Gaming", src:"web", shape:"star", url:"https://www.start.gg/hub/bay-area-madhouse/schedule", lat:37.3300, lng:-121.8860 },
+  { n:"MagiTōkon — Marvel Tōkon: Fighting Souls tournament", d:"2026-08-07", t:"evening", v:"Bay Area MADHouse", city:"Milpitas", co:"scl", cat:"Gaming", src:"web", shape:"star", url:"https://www.start.gg/hub/bay-area-madhouse/schedule", lat:37.4323, lng:-121.8996 },
+  { n:"Astral Beatdown — 5-game fighting tournament (Granblue, UNI2 + more)", d:"2026-08-08", t:"2:00 PM", v:"Bay Area MADHouse", city:"Milpitas", co:"scl", cat:"Gaming", src:"web", shape:"star", url:"https://www.start.gg/hub/bay-area-madhouse/schedule", lat:37.4323, lng:-121.8996 },
+  { n:"MAGWest 2026 — music & gaming festival (Aug 14–16)", d:"2026-08-14", t:"all day", v:"DoubleTree by Hilton San Jose", city:"San Jose", co:"scl", cat:"Gaming", src:"web", shape:"star", url:"https://magwest.org/", lat:37.3690, lng:-121.9220 }
+];
+
+const EVENT_URLS = {"0":"https://www.eventbrite.com/e/1993572201119","1":"https://www.eventbrite.com/e/1992457997506","2":"https://www.eventbrite.com/e/1993564188152","3":"https://www.eventbrite.com/e/1994486658285","4":"https://www.eventbrite.com/e/1990514875576","5":"https://www.eventbrite.com/e/1992708380408","6":"https://www.eventbrite.com/e/1993181204638","7":"https://www.eventbrite.com/e/1989609224750","8":"https://www.eventbrite.com/e/1992082807302","9":"https://www.eventbrite.com/e/1994641043054","10":"https://www.eventbrite.com/e/1696084948739","11":"https://www.eventbrite.com/e/1992458800909","12":"https://www.eventbrite.com/e/1994751897623","13":"https://www.eventbrite.com/e/1993986657770","14":"https://www.eventbrite.com/e/1993105179244","15":"https://www.eventbrite.com/e/1991739232661","16":"https://www.eventbrite.com/e/1993357980379","17":"https://www.eventbrite.com/e/1995403298982","18":"https://www.eventbrite.com/e/1988566212071","19":"https://www.eventbrite.com/e/1991437899365","31":"https://www.eventbrite.com/e/1987481416418","32":"https://www.eventbrite.com/e/1989878484112","33":"https://www.eventbrite.com/e/1993983370939","34":"https://www.eventbrite.com/e/1994092847386","35":"https://www.eventbrite.com/e/1992793183055","36":"https://www.eventbrite.com/e/1992887060846","37":"https://www.eventbrite.com/e/1993938211867","38":"https://www.eventbrite.com/e/1990812592054","40":"https://www.eventbrite.com/e/1993008073799","41":"https://www.eventbrite.com/e/1994094126211","42":"https://www.eventbrite.com/e/1994403806473","43":"https://www.eventbrite.com/e/1995254436731","44":"https://www.eventbrite.com/e/1993564355653","45":"https://www.eventbrite.com/e/1995609774556","46":"https://www.eventbrite.com/e/1994383549885","47":"https://www.eventbrite.com/e/1991739495447","48":"https://www.eventbrite.com/e/1986350913052","49":"https://www.eventbrite.com/e/1991140831828","50":"https://www.eventbrite.com/e/1990358441678","51":"https://www.eventbrite.com/e/1994115231337","52":"https://www.eventbrite.com/e/1990423976695","53":"https://www.eventbrite.com/e/1993576428764","54":"https://www.eventbrite.com/e/1995175239851","55":"https://www.eventbrite.com/e/1995493424550","57":"https://www.facebook.com/events/935306299325983/","59":"https://www.facebook.com/events/1034084809067364/","60":"https://www.facebook.com/events/1343693730445250/","61":"https://www.facebook.com/events/1705947473750554/","62":"https://www.facebook.com/events/1262444652750162/","63":"https://www.facebook.com/events/1530737148502564/","64":"https://www.facebook.com/events/1598211681268348/","65":"https://www.facebook.com/events/1645066583248289/","66":"https://www.facebook.com/events/1365968492228092/","67":"https://www.eventbrite.com/e/1990912773700","68":"https://www.eventbrite.com/e/1993207199389","69":"https://www.eventbrite.com/e/1993797209124","84":"https://www.eventbrite.com/e/1991293950811","85":"https://www.eventbrite.com/e/1993473717552","86":"https://www.eventbrite.com/e/1351677085549","87":"https://www.eventbrite.com/e/1994091787215","88":"https://www.eventbrite.com/e/1984901550971","91":"https://www.eventbrite.com/e/1991808485799","92":"https://www.eventbrite.com/e/1021895515997","93":"https://www.eventbrite.com/e/1993356841974","94":"https://www.eventbrite.com/e/1993778271481","96":"https://www.eventbrite.com/e/1985389443270","97":"https://www.facebook.com/events/1909560466395044/","98":"https://www.facebook.com/events/4007683749364698/","99":"https://www.facebook.com/events/4053547638269000/","100":"https://www.facebook.com/events/1353699393528701/","101":"https://www.facebook.com/events/1279770500578985/","102":"https://www.facebook.com/events/1182603240641914/","103":"https://www.facebook.com/events/1315031214058936/","104":"https://www.facebook.com/events/1619769195577264/","105":"https://www.facebook.com/events/1251543509767756/","106":"https://www.facebook.com/events/1880539752880200/","107":"https://www.facebook.com/events/1664229521293213/","108":"https://www.facebook.com/events/26762584536775201/","109":"https://www.facebook.com/events/1459382289296055/","110":"https://www.facebook.com/events/1587950765848905/","111":"https://www.facebook.com/events/787883014342487/","112":"https://www.facebook.com/events/1717394389631271/","113":"https://www.facebook.com/events/2195764557924917/","114":"https://www.eventbrite.com/e/1989768045788","115":"https://www.eventbrite.com/e/1995605319230","121":"https://www.eventbrite.com/e/1991657390870","122":"https://www.eventbrite.com/e/1990917724508","123":"https://www.eventbrite.com/e/1987031208835","124":"https://www.eventbrite.com/e/1991495779486","125":"https://www.eventbrite.com/e/1995292721241","126":"https://www.eventbrite.com/e/1982698987043","127":"https://www.eventbrite.com/e/1990375026283","128":"https://www.eventbrite.com/e/1993993266537","129":"https://www.eventbrite.com/e/1989700946091","130":"https://www.eventbrite.com/e/1995396802551","131":"https://www.eventbrite.com/e/1990729242754","132":"https://www.eventbrite.com/e/1993580620301","133":"https://www.facebook.com/events/1759865041836135/","134":"https://www.facebook.com/events/1307519414815042/","136":"https://www.facebook.com/events/1242147047907121/","137":"https://www.facebook.com/events/2171137686994875/","138":"https://www.facebook.com/events/1043893368077820/","139":"https://www.facebook.com/events/2190416611725881/","140":"https://www.facebook.com/events/1425209899358959/","141":"https://www.facebook.com/events/1293529342620115/","142":"https://www.facebook.com/events/1282460086729747/","143":"https://www.facebook.com/events/1290406162923217/","144":"https://www.facebook.com/events/1453602959728352/","145":"https://www.facebook.com/events/1684008075938281/","146":"https://www.facebook.com/events/1405160261285700/","147":"https://www.facebook.com/events/925050333566762/","148":"https://www.facebook.com/events/2106485856591735/","149":"https://www.facebook.com/events/1448100456556446/","150":"https://www.facebook.com/events/1701305034386151/","151":"https://www.facebook.com/events/2233438274064169/","152":"https://www.facebook.com/events/1635657960961186/","153":"https://www.facebook.com/events/1435911228298410/","154":"https://www.eventbrite.com/e/1990117080761","155":"https://www.eventbrite.com/e/1988144600018","156":"https://www.eventbrite.com/e/1994074585765","157":"https://www.eventbrite.com/e/1991313440104","158":"https://www.eventbrite.com/e/1992695765677","159":"https://www.eventbrite.com/e/1995055113550","160":"https://www.eventbrite.com/e/1995857703117","166":"https://www.facebook.com/events/1342340167290507/","167":"https://www.facebook.com/events/4398896203711070/","168":"https://www.facebook.com/events/3834013146733852/","169":"https://www.facebook.com/events/1252097963671811/","170":"https://www.facebook.com/events/860934969595579/","171":"https://www.facebook.com/events/1630654694660602/","172":"https://www.facebook.com/events/1888509845147703/","173":"https://www.facebook.com/events/1557529152642788/","174":"https://www.facebook.com/events/1965928777445676/","175":"https://www.facebook.com/events/1755898955381862/","176":"https://www.facebook.com/events/1013541967821585/","177":"https://www.facebook.com/events/26222924893967233/","178":"https://www.facebook.com/events/907936685347172/","179":"https://www.facebook.com/events/4335731973409293/","180":"https://www.facebook.com/events/1783647513055524/","181":"https://www.facebook.com/events/983227324319116/","182":"https://www.facebook.com/events/2114381562690677/","183":"https://www.facebook.com/events/938395768890457/","184":"https://www.facebook.com/events/985308990712044/","185":"https://www.facebook.com/events/1272008795029674/","186":"https://www.facebook.com/events/1348224376608335/","187":"https://www.facebook.com/events/854289077582332/","202":"https://www.eventbrite.com/e/1992779132028","203":"https://www.eventbrite.com/e/1990622706100","204":"https://www.eventbrite.com/e/1994096264607","205":"https://www.eventbrite.com/e/1994755485354","206":"https://www.eventbrite.com/e/1984631708866","207":"https://www.eventbrite.com/e/1987967308735","208":"https://www.facebook.com/events/1345995867405344/","209":"https://www.facebook.com/events/4584688838521869/","210":"https://www.facebook.com/events/1446794423452587/","211":"https://www.facebook.com/events/997420379692919/","212":"https://www.facebook.com/events/2059695002097849/","213":"https://www.facebook.com/events/27359294383719795/","214":"https://www.facebook.com/events/844785538176353/","215":"https://www.facebook.com/events/814758750931476/","216":"https://www.facebook.com/events/1056201200406827/","217":"https://www.facebook.com/events/1538844564562790/"};
+EVENTS.forEach((e, i) => { if (EVENT_URLS[i]) e.url = EVENT_URLS[i]; });
+
+const gmaps = e => "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(e.v + ", " + e.city + ", CA");
+const SRC_NAMES = { eb: "Eventbrite", fb: "Facebook", fc: "Funcheap", hz: "19hz", web: "Venue site" };
+const srcName = e => SRC_NAMES[e.src || "eb"];
+const SRC_QUERY = { eb: "eventbrite ", fb: "facebook event ", fc: "funcheap ", hz: "", web: "" };
+const eblink = e => e.url || ("https://www.google.com/search?q=" + encodeURIComponent(SRC_QUERY[e.src || "eb"] + e.n.replace(/\s*\(.*?\)\s*/g," ") + " " + e.city));
+const fmtDate = iso => {
+  const [y,m,d] = iso.split("-").map(Number);
+  const dt = new Date(y, m-1, d);
+  return dt.toLocaleDateString("en-US", { weekday:"short", month:"short", day:"numeric" });
+};
+
+EVENTS.forEach((e, i) => e.id = i);
+const DAY_NAMES = { "2026-07-31": "Friday, Jul 31", "2026-08-01": "Saturday, Aug 1", "2026-08-02": "Sunday, Aug 2" };
+const WK = EVENTS.filter(e => DAY_NAMES[e.d]);   // weekend only: Fri/Sat/Sun
+const t24 = e => {
+  const m = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(e.t.trim());
+  if (!m) return /evening/i.test(e.t) ? 18*60 : 0;
+  let h = +m[1] % 12; if (/pm/i.test(m[3])) h += 12;
+  return h*60 + +m[2];
+};
+const state = { counties: new Set(["sf","scl","ala","smt"]), day: "all", sources: new Set(["eb","fb","fc","hz","web"]), plan: new Set() };
+const isRadar = e => (e.cc || e.shape) && !DAY_NAMES[e.d];   // special interest events beyond this weekend
+const visible = e => state.counties.has(e.co) && state.sources.has(e.src || "eb") &&
+  (DAY_NAMES[e.d] ? (state.day === "all" || e.d === state.day) : isRadar(e));
+
+// ---- Map (degrades gracefully if Leaflet/tiles can't load) ----
+let map = null;
+try {
+  map = L.map("map").setView([37.62, -122.25], 9);
+  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  }).addTo(map);
+} catch (err) {
+  document.getElementById("map").innerHTML = '<div style="padding:40px;text-align:center;color:#898781;font-size:13px">Map couldn\'t load (no connection to the map library) — the list and planner below still work.</div>';
+}
+
+// group events by venue (weekend events + special-interest radar)
+const RADAR = EVENTS.filter(isRadar);
+const venues = {};
+WK.concat(RADAR).forEach(e => {
+  const key = e.v + "|" + e.city;
+  (venues[key] = venues[key] || { v: e.v, city: e.city, co: e.co, lat: e.lat, lng: e.lng, events: [] }).events.push(e);
+});
+// shape by event type: explicit flag (tiki/gaming) wins, then category
+const CAT_SHAPE = { "Nightlife": "diamond", "Food & Drink": "tri", "Culture": "hex", "Sports": "tridown", "Business": "pent", "Gaming": "star" };
+const shapeOf = e => e.shape === "star" ? "star" : e.shape === "sq" ? "sq" : (CAT_SHAPE[e.cat] || "circle");
+const GLYPH = { circle: "●", sq: "■", diamond: "◆", tri: "▲", tridown: "▼", hex: "⬢", pent: "⬟", star: "★" };
+const SHAPE_RANK = ["star", "sq", "diamond", "tri", "hex", "tridown", "pent", "circle"];   // venue pin takes highest-priority shape among its events
+Object.values(venues).forEach(ven => {
+  ven.cc = ven.events.some(e => e.cc);
+  const shapes = ven.events.map(shapeOf);
+  ven.shape = SHAPE_RANK.find(s => shapes.includes(s)) || "circle";
+});
+const iconFor = (ven, inPlan) => {
+  const color = ven.cc ? "#0b0b0b" : COUNTY[ven.co].color;
+  const ring = inPlan ? (ven.cc ? "#eb6834" : "#0b0b0b") : "#fcfcfb";
+  const size = inPlan ? 24 : 21;
+  const htmlStr = '<div style="font-size:' + size + 'px;line-height:22px;color:' + color + ';-webkit-text-stroke:1.5px ' + ring + ';text-align:center">' + GLYPH[ven.shape] + '</div>';
+  return L.divIcon({ html: htmlStr, className: "pin", iconSize: [22, 22], iconAnchor: [11, 11] });
+};
+
+const markers = [];
+if (map) Object.values(venues).forEach(ven => {
+  const m = L.marker([ven.lat, ven.lng], { icon: iconFor(ven, false) }).addTo(map);
+  const popup = () => {
+    const evs = ven.events.filter(visible);
+    return '<div class="popup-venue">' + ven.v + ' · ' + ven.city + '</div>' +
+      evs.map(e => '<div class="popup-ev"><div class="pn">' + e.n + '</div><div class="pd">' + fmtDate(e.d) + ' · ' + e.t + ' · ' + e.cat + ' · ' + srcName(e) + ' · <a href="#" onclick="togglePlan(' + e.id + ');return false;">' + (state.plan.has(e.id) ? '✓ In plan' : '＋ Add to plan') + '</a></div></div>').join("") +
+      '<div class="popup-links"><a href="' + gmaps(ven.events[0]) + '" target="_blank">Open in Google Maps ↗</a></div>';
+  };
+  m.bindPopup(popup);
+  m.on("popupopen", ev => ev.popup.setContent(popup()));
+  markers.push({ marker: m, venue: ven });
+});
+
+// ---- List ----
+const listEl = document.getElementById("list");
+const order = ["sf","scl","ala","smt"];
+order.forEach(co => {
+  const evs = WK.filter(e => e.co === co).sort((a,b) => a.d === b.d ? t24(a) - t24(b) : a.d.localeCompare(b.d));
+  const sec = document.createElement("div");
+  sec.className = "county-section"; sec.dataset.county = co;
+  sec.innerHTML = '<div class="county-head"><span class="dot" style="background:' + COUNTY[co].color + '"></span><h2>' + COUNTY[co].name + '</h2><span class="n">' + evs.length + ' weekend events</span></div>';
+  evs.forEach(e => {
+    const row = document.createElement("div");
+    row.className = "ev"; row.dataset.d = e.d; row.dataset.id = e.id;
+    row.title = "Double-click to add to / remove from your plan";
+    row.innerHTML =
+      '<div class="when"><span class="d">' + fmtDate(e.d) + '</span>' + e.t + '</div>' +
+      '<div class="what"><button class="addbtn" title="Add to plan">＋</button><div style="display:inline-block;vertical-align:middle;max-width:calc(100% - 40px)"><div class="name">' + GLYPH[shapeOf(e)] + ' ' + e.n + '</div><div class="meta">' + e.v + ', ' + e.city + ' · <span class="cat">' + e.cat + ' · ' + srcName(e) + '</span></div></div></div>' +
+      '<div class="links"><a href="' + gmaps(e) + '" target="_blank">Google Maps ↗</a><br><a href="' + eblink(e) + '" target="_blank">Find tickets ↗</a></div>';
+    row._ev = e;
+    row.addEventListener("dblclick", ev => { if (ev.target.tagName !== "A") togglePlan(e.id); });
+    row.querySelector(".addbtn").addEventListener("click", ev => { ev.stopPropagation(); togglePlan(e.id); });
+    sec.appendChild(row);
+  });
+  listEl.appendChild(sec);
+});
+
+// "On the radar" section — tiki / gaming / convention events beyond this weekend
+{
+  const sec = document.createElement("div");
+  sec.className = "county-section"; sec.dataset.county = "radar";
+  const icon = e => GLYPH[shapeOf(e)] + " " + (e.cc ? "⬛ " : "");
+  sec.innerHTML = '<div class="county-head"><h2>On the radar — conventions ⬛ · tiki ◼ · gaming ★ (beyond this weekend)</h2><span class="n">' + RADAR.length + ' events</span></div>';
+  RADAR.sort((a,b) => a.d.localeCompare(b.d)).forEach(e => {
+    const row = document.createElement("div");
+    row.className = "ev"; row.dataset.id = e.id;
+    row.innerHTML =
+      '<div class="when"><span class="d">' + fmtDate(e.d) + '</span>' + e.t + '</div>' +
+      '<div class="what"><div class="name">' + icon(e) + e.n + '</div><div class="meta">' + e.v + ', ' + e.city + ' · <span class="cat">' + e.cat + ' · ' + srcName(e) + '</span></div></div>' +
+      '<div class="links"><a href="' + gmaps(e) + '" target="_blank">Google Maps ↗</a><br><a href="' + eblink(e) + '" target="_blank">Find tickets ↗</a></div>';
+    row._ev = e;
+    sec.appendChild(row);
+  });
+  listEl.appendChild(sec);
+}
+
+// counts in chips
+order.forEach(co => { document.getElementById("n-" + co).textContent = "(" + WK.filter(e => e.co === co).length + ")"; });
+
+// ---- Plan ----
+const routeUrl = evs => {
+  // origin intentionally omitted — Google Maps will ask for / default to your current location
+  const enc = e => encodeURIComponent(e.v + ", " + e.city + ", CA");
+  const stops = evs.slice(0, -1);
+  return "https://www.google.com/maps/dir/?api=1&destination=" + enc(evs[evs.length - 1]) +
+    (stops.length ? "&waypoints=" + stops.map(enc).join("%7C") : "");
+};
+
+function renderPlan() {
+  const body = document.getElementById("planBody");
+  const picked = WK.filter(e => state.plan.has(e.id)).sort((a,b) => a.d === b.d ? t24(a) - t24(b) : a.d.localeCompare(b.d));
+  document.getElementById("planCount").textContent = "(" + picked.length + " event" + (picked.length === 1 ? "" : "s") + ")";
+  if (!picked.length) { body.innerHTML = '<div class="plan-empty">Nothing picked yet.</div>'; return; }
+  let html = "";
+  Object.keys(DAY_NAMES).forEach(d => {
+    const evs = picked.filter(e => e.d === d);
+    if (!evs.length) return;
+    html += '<div class="plan-day"><h3>' + DAY_NAMES[d] + '</h3>' +
+      evs.map(e => '<div class="plan-item"><span class="pt">' + e.t + '</span><span><a class="pl-name" href="' + eblink(e) + '" target="_blank" title="Open the event page for the full description">' + e.n + '</a> — ' + e.v + ', ' + e.city + '</span><span class="pl-links"><a href="' + eblink(e) + '" target="_blank">Tickets ↗</a> · <a href="' + gmaps(e) + '" target="_blank">Map ↗</a></span><button class="rm" title="Remove" onclick="togglePlan(' + e.id + ')">✕</button></div>').join("") +
+      '<a class="route-btn" href="' + routeUrl(evs) + '" target="_blank">Open ' + DAY_NAMES[d].split(",")[0] + ' route in Google Maps ↗</a>' +
+      (evs.length > 9 ? '<div class="plan-hint">Google Maps caps routes at ~10 stops — trim this day if the route link misbehaves.</div>' : '') +
+      '</div>';
+  });
+  body.innerHTML = html;
+}
+
+window.togglePlan = function(id) {
+  if (state.plan.has(id)) state.plan.delete(id); else state.plan.add(id);
+  document.querySelectorAll('.ev[data-id="' + id + '"]').forEach(r => {
+    r.classList.toggle("sel", state.plan.has(id));
+    const b = r.querySelector(".addbtn");
+    if (b) b.textContent = state.plan.has(id) ? "✓" : "＋";
+  });
+  if (map) map.closePopup();
+  renderPlan();
+  refresh();
+};
+
+// ---- Filtering ----
+function refresh() {
+  markers.forEach(({ marker, venue }) => {
+    const show = venue.events.some(visible);
+    const has = map.hasLayer(marker);
+    if (show && !has) marker.addTo(map);
+    if (!show && has) map.removeLayer(marker);
+    const inPlan = venue.events.some(e => state.plan.has(e.id));
+    marker.setIcon(iconFor(venue, inPlan));
+  });
+  document.querySelectorAll(".county-section").forEach(sec => {
+    const co = sec.dataset.county;
+    let any = false;
+    sec.querySelectorAll(".ev").forEach(row => {
+      const show = visible(row._ev);
+      row.classList.toggle("hidden", !show);
+      if (show) any = true;
+    });
+    sec.classList.toggle("hidden", (co !== "radar" && !state.counties.has(co)) || !any);
+  });
+}
+
+document.querySelectorAll(".chip[data-county]").forEach(chip => {
+  chip.addEventListener("click", () => {
+    const co = chip.dataset.county;
+    if (state.counties.has(co)) { state.counties.delete(co); chip.classList.add("off"); }
+    else { state.counties.add(co); chip.classList.remove("off"); }
+    refresh();
+  });
+});
+document.querySelectorAll(".day-chip").forEach(chip => {
+  chip.addEventListener("click", () => {
+    state.day = chip.dataset.day;
+    document.querySelectorAll(".day-chip").forEach(c => c.classList.toggle("off", c !== chip));
+    refresh();
+  });
+});
+document.querySelectorAll(".src-chip").forEach(chip => {
+  chip.addEventListener("click", () => {
+    const s = chip.dataset.src;
+    if (state.sources.has(s)) { state.sources.delete(s); chip.classList.add("off"); }
+    else { state.sources.add(s); chip.classList.remove("off"); }
+    refresh();
+  });
+});
+refresh();
+renderPlan();
+</script>
+</body>
+</html>
