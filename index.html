@@ -179,6 +179,18 @@
     <span class="chip src-chip" data-src="fc">Funcheap</span>
     <span class="chip src-chip" data-src="hz">19hz</span>
   </div>
+  <div class="chips" id="typeChips">
+    <span class="lbl">Type</span>
+    <span class="chip type-chip" data-type="circle">● Music <span class="n" id="tn-circle"></span></span>
+    <span class="chip type-chip" data-type="diamond">◆ Nightlife <span class="n" id="tn-diamond"></span></span>
+    <span class="chip type-chip" data-type="tri">▲ Food &amp; Drink <span class="n" id="tn-tri"></span></span>
+    <span class="chip type-chip" data-type="hex">⬢ Culture <span class="n" id="tn-hex"></span></span>
+    <span class="chip type-chip" data-type="tridown">▼ Sports <span class="n" id="tn-tridown"></span></span>
+    <span class="chip type-chip" data-type="pent">⬟ Business <span class="n" id="tn-pent"></span></span>
+    <span class="chip type-chip" data-type="star">★ Gaming <span class="n" id="tn-star"></span></span>
+    <span class="chip type-chip" data-type="sq">■ Tiki <span class="n" id="tn-sq"></span></span>
+    <span class="lbl" style="margin-left:4px">tip: double-tap a type to see only it</span>
+  </div>
 
   <div id="map"></div>
   <div class="mapnote">Pin positions are approximate — use each pin's "Open in Google Maps" link for exact directions. Click a pin to see everything happening at that venue.</div>
@@ -488,9 +500,10 @@ const t24 = e => {
   let h = +m[1] % 12; if (/pm/i.test(m[3])) h += 12;
   return h*60 + +m[2];
 };
-const state = { counties: new Set(["sf","scl","ala","smt"]), day: "all", sources: new Set(["eb","fb","fc","hz","web"]), plan: new Set() };
+const ALL_TYPES = ["circle","diamond","tri","hex","tridown","pent","star","sq"];
+const state = { counties: new Set(["sf","scl","ala","smt"]), day: "all", sources: new Set(["eb","fb","fc","hz","web"]), types: new Set(ALL_TYPES), plan: new Set() };
 const isRadar = e => (e.cc || e.shape) && !DAY_NAMES[e.d];   // special interest events beyond this weekend
-const visible = e => state.counties.has(e.co) && state.sources.has(e.src || "eb") &&
+const visible = e => state.counties.has(e.co) && state.sources.has(e.src || "eb") && state.types.has(shapeOf(e)) &&
   (DAY_NAMES[e.d] ? (state.day === "all" || e.d === state.day) : isRadar(e));
 
 // ---- Map (degrades gracefully if Leaflet/tiles can't load) ----
@@ -686,6 +699,27 @@ document.querySelectorAll(".src-chip").forEach(chip => {
     if (state.sources.has(s)) { state.sources.delete(s); chip.classList.add("off"); }
     else { state.sources.add(s); chip.classList.remove("off"); }
     refresh();
+  });
+});
+// type filter: click toggles; double-click solos that type (dblclick again restores all)
+ALL_TYPES.forEach(ty => {
+  const el = document.getElementById("tn-" + ty);
+  if (el) el.textContent = "(" + WK.filter(e => shapeOf(e) === ty).length + ")";
+});
+const syncTypeChips = () => document.querySelectorAll(".type-chip").forEach(c =>
+  c.classList.toggle("off", !state.types.has(c.dataset.type)));
+document.querySelectorAll(".type-chip").forEach(chip => {
+  chip.addEventListener("click", () => {
+    const ty = chip.dataset.type;
+    if (state.types.has(ty)) state.types.delete(ty); else state.types.add(ty);
+    syncTypeChips(); refresh();
+  });
+  chip.addEventListener("dblclick", ev => {
+    ev.preventDefault();
+    const ty = chip.dataset.type;
+    if (state.types.size === 1 && state.types.has(ty)) { ALL_TYPES.forEach(t => state.types.add(t)); }
+    else { state.types.clear(); state.types.add(ty); }
+    syncTypeChips(); refresh();
   });
 });
 refresh();
