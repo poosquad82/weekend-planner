@@ -178,6 +178,7 @@
     <span class="chip src-chip" data-src="fb">Facebook</span>
     <span class="chip src-chip" data-src="fc">Funcheap</span>
     <span class="chip src-chip" data-src="hz">19hz</span>
+    <span class="chip src-chip" data-src="db">DoTheBay</span>
   </div>
   <div class="chips" id="typeChips">
     <span class="lbl">Type</span>
@@ -434,56 +435,85 @@ const EVENTS = [
   { n:"Elisa Sunga and Cake Picnic", d:"2026-08-07", t:"5:00 PM", v:"Kepler's Books", city:"Menlo Park", co:"smt", cat:"Food & Drink", src:"eb", url:"https://www.eventbrite.com/e/1988126352439", lat:37.453, lng:-122.184 },
   { n:"Sicilian Summer Festa", d:"2026-08-07", t:"6:00 PM", v:"Eataly Silicon Valley", city:"Santa Clara", co:"scl", cat:"Food & Drink", src:"eb", lat:37.3255, lng:-121.946 },
   { n:"Bollywood Arabian Night", d:"2026-08-07", t:"10:00 PM", v:"Opal Nightclub", city:"Mountain View", co:"scl", cat:"Nightlife", src:"eb", lat:37.3939, lng:-122.0797 },
-  { n:"Wobbleland 2026 (Aug 21–22)", d:"2026-08-21", t:"evening", v:"San Jose Convention Center", city:"San Jose", co:"scl", cat:"Music", src:"fb", url:"https://www.facebook.com/events/1664229521293213/", cc:1, lat:37.329, lng:-121.889 },
-  { n:"Mai Tai Day 2026", d:"2026-08-30", t:"3:00 PM", v:"Trader Vic's", city:"Emeryville", co:"ala", cat:"Food & Drink", src:"eb", shape:"sq", lat:37.8378, lng:-122.3125 },
   { n:"Monster Jam", d:"2026-08-08", t:"12:00 PM", v:"Oakland Arena / Coliseum", city:"Oakland", co:"ala", cat:"Sports", src:"fb", url:"https://www.facebook.com/events/1684008075938281/", lat:37.7503, lng:-122.203 },
   { n:"Sha'Motown — Epic Motown Tribute", d:"2026-08-08", t:"7:30 PM", v:"Almost Famous Wine Lounge", city:"Livermore", co:"ala", cat:"Music", src:"eb", lat:37.6819, lng:-121.7685 },
   { n:"Damage Inc — Cliff Burton–era Metallica Tribute", d:"2026-08-07", t:"6:00 PM", v:"Headyworks", city:"Livermore", co:"ala", cat:"Music", src:"fb", url:"https://www.facebook.com/events/26222924893967233/", lat:37.686, lng:-121.761 },
-  { n:"Bamville Card Show", d:"2026-08-15", t:"10:00 AM", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Culture", src:"fb", url:"https://www.facebook.com/events/4335731973409293/", cc:1, lat:37.654, lng:-121.888 },
-  { n:"Thrift Fest", d:"2026-09-19", t:"12:00 PM", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Culture", src:"fb", url:"https://www.facebook.com/events/938395768890457/", cc:1, lat:37.654, lng:-121.888 },
-  { n:"626 Night Market — Bay Area (Oct 9–11)", d:"2026-10-09", t:"evening", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Food & Drink", src:"fb", url:"https://www.facebook.com/events/1348224376608335/", cc:1, lat:37.654, lng:-121.888 },
-  { n:"Pleasanton Harvest Festival (Oct 23–25)", d:"2026-10-23", t:"all day", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Culture", src:"fb", url:"https://www.facebook.com/events/854289077582332/", cc:1, lat:37.654, lng:-121.888 },
-  { n:"West Coast Asian Foodie Festival (Aug 15–16)", d:"2026-08-15", t:"10:00 AM", v:"San Mateo County Event Center", city:"San Mateo", co:"smt", cat:"Food & Drink", src:"eb", cc:1, lat:37.545, lng:-122.2988 },
   { n:"EzMotion Band", d:"2026-08-07", t:"7:30 PM", v:"Peninsula Italian American Social Club", city:"San Mateo", co:"smt", cat:"Music", src:"fb", url:"https://www.facebook.com/events/1446794423452587/", lat:37.566, lng:-122.324 },
   { n:"Silicon Valley Robotics Fair (Aug 8–9)", d:"2026-08-08", t:"all day", v:"San Mateo County Event Center", city:"San Mateo", co:"smt", cat:"Culture", src:"fb", url:"https://www.facebook.com/events/997420379692919/", cc:1, lat:37.545, lng:-122.2988 },
   { n:"Book Signing with Jim Madrid", d:"2026-08-08", t:"1:00 PM", v:"Barnes & Noble", city:"San Mateo", co:"smt", cat:"Culture", src:"fb", url:"https://www.facebook.com/events/2059695002097849/", lat:37.536, lng:-122.299 },
-  { n:"JSTSTANCE car show", d:"2026-08-22", t:"5:00 PM", v:"San Mateo County Event Center", city:"San Mateo", co:"smt", cat:"Culture", src:"fb", url:"https://www.facebook.com/events/814758750931476/", cc:1, lat:37.545, lng:-122.2988 },
-  { n:"NorCal Barber Expo", d:"2026-08-16", t:"8:00 AM", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Culture", src:"web", cc:1, lat:37.654, lng:-121.888 },
-  { n:"Goodguys 39th West Coast Nationals — 3,000+ hot rods (Aug 21–23)", d:"2026-08-21", t:"8:00 AM", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Culture", src:"web", cc:1, lat:37.654, lng:-121.888 },
   { n:"Dirty Pop! Bops & Throwbacks (tiki bar dance night)", d:"2026-08-07", t:"10:00 PM", v:"Bamboo Hut", city:"San Francisco", co:"sf", cat:"Nightlife", src:"eb", shape:"sq", lat:37.798, lng:-122.4058 },
-  { n:"South Seas Swing 2026 (tiki + swing on an aircraft carrier)", d:"2026-08-15", t:"7:00 PM", v:"USS Hornet Museum", city:"Alameda", co:"ala", cat:"Music", src:"eb", shape:"sq", lat:37.7726, lng:-122.3025 },
-  { n:"Alameda Tiki Noir Market (The Menagerie)", d:"2026-08-23", t:"1:00 PM", v:"Forbidden Island", city:"Alameda", co:"ala", cat:"Culture", src:"eb", shape:"sq", lat:37.7645, lng:-122.244 },
-  { n:"Tiki Vendors — California Rum Fest 2026", d:"2026-09-19", t:"2:00 PM", v:"Trader Vic's (parking lot)", city:"Emeryville", co:"ala", cat:"Food & Drink", src:"eb", shape:"sq", lat:37.8378, lng:-122.3125 },
-  { n:"Autumnal Tiki", d:"2026-09-21", t:"7:00 PM", v:"The Alembic", city:"San Francisco", co:"sf", cat:"Food & Drink", src:"eb", shape:"sq", lat:37.7695, lng:-122.446 },
   { n:"MagiTōkon — Marvel Tōkon: Fighting Souls tournament", d:"2026-08-07", t:"evening", v:"Bay Area MADHouse", city:"Milpitas", co:"scl", cat:"Gaming", src:"web", url:"https://www.start.gg/hub/bay-area-madhouse/schedule", shape:"star", lat:37.4323, lng:-121.8996 },
   { n:"Astral Beatdown — 5-game fighting tournament (Granblue, UNI2 + more)", d:"2026-08-08", t:"2:00 PM", v:"Bay Area MADHouse", city:"Milpitas", co:"scl", cat:"Gaming", src:"web", url:"https://www.start.gg/hub/bay-area-madhouse/schedule", shape:"star", lat:37.4323, lng:-121.8996 },
-  { n:"MAGWest 2026 — music & gaming festival (Aug 14–16)", d:"2026-08-14", t:"all day", v:"DoubleTree by Hilton San Jose", city:"San Jose", co:"scl", cat:"Gaming", src:"web", url:"https://magwest.org/", shape:"star", lat:37.369, lng:-121.922 },
-  { n:"Guildhouse Fighters Weekly (SF6 + Melee)", d:"2026-08-15", t:"TBD", v:"Guildhouse, 420 S 1st St", city:"San Jose", co:"scl", cat:"Gaming", src:"web", url:"https://www.start.gg/hub/bay-area-madhouse/schedule", shape:"star", lat:37.332, lng:-121.886 },
-  { n:"MAGWest 2026 (music + gaming festival)", d:"2026-08-15", t:"TBD", v:"DoubleTree by Hilton", city:"San Jose", co:"scl", cat:"Gaming", src:"web", url:"https://magwest2026.sched.com/", shape:"star", lat:37.376, lng:-121.923 },
-  { n:"Silicon Valley Int'l Invention Festival", d:"2026-08-15", t:"TBD", v:"Santa Clara Convention Center", city:"Santa Clara", co:"scl", cat:"Business", src:"web", url:"https://santaclaraconventioncenter.com/convention-calendar/silicon-valley-international-invention-festival-sviif-2026", cc:1, lat:37.403, lng:-121.977 },
-  { n:"Hype Con Bay Area", d:"2026-08-15", t:"TBD", v:"Santa Clara Convention Center", city:"Santa Clara", co:"scl", cat:"Culture", src:"web", url:"https://santaclaraconventioncenter.com/convention-calendar/hype-con-bay-area", cc:1, lat:37.403, lng:-121.977 },
-  { n:"Raageet: Priyani Vani Panditt Live", d:"2026-08-15", t:"TBD", v:"Santa Clara Convention Center", city:"Santa Clara", co:"scl", cat:"Music", src:"web", url:"https://santaclaraconventioncenter.com/convention-calendar/raageet-priyani-vani-panditt-live-in-concert", cc:1, lat:37.403, lng:-121.977 },
-  { n:"NorCal Barber Expo", d:"2026-08-15", t:"TBD", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Business", src:"web", url:"https://www.norcalbarberexpo.com/", cc:1, lat:37.6598, lng:-121.888 },
-  { n:"USA Asian Culture & Food Expo / Asian Foodie Fest", d:"2026-08-15", t:"TBD", v:"San Mateo County Event Center", city:"San Mateo", co:"smt", cat:"Food & Drink", src:"web", url:"https://dothebay.com/events/2026/8/15/2026-usa-asian-culture-food-expo-asian-foodie-festival-san-mateo-ca-tickets", cc:1, lat:37.5443, lng:-122.2977 },
-  { n:"Goodguys 39th West Coast Nationals (hot rods)", d:"2026-08-15", t:"TBD", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Culture", src:"web", url:"https://www.good-guys.com/wcn", cc:1, lat:37.6598, lng:-121.888 },
-  { n:"BRICK BLAST 2026 (LEGO fan event)", d:"2026-08-15", t:"TBD", v:"Santa Clara Convention Center", city:"Santa Clara", co:"scl", cat:"Culture", src:"web", url:"https://santaclaraconventioncenter.com/convention-calendar/brick-blast-2026", cc:1, lat:37.403, lng:-121.977 },
-  { n:"California Bridal & Wedding Expo", d:"2026-08-15", t:"TBD", v:"Santa Clara Convention Center", city:"Santa Clara", co:"scl", cat:"Business", src:"web", url:"https://santaclaraconventioncenter.com/convention-calendar/california-bridal-wedding-expo", cc:1, lat:37.403, lng:-121.977 },
-  { n:"Alameda Tiki Noir Market (by the Menagerie)", d:"2026-08-15", t:"TBD", v:"Alameda", city:"Alameda", co:"ala", cat:"Culture", src:"web", url:"https://www.eventbrite.com/e/alameda-tiki-noir-market-presented-by-the-menagerie-tickets-1991873866354", shape:"sq", lat:37.7716, lng:-122.2822 },
-  { n:"Pokémon World Championships 2026", d:"2026-08-15", t:"TBD", v:"Moscone Center", city:"San Francisco", co:"sf", cat:"Gaming", src:"web", url:"https://conventioncalendar.com/us/ca/san-francisco/moscone-center", shape:"star", lat:37.7842, lng:-122.4016 },
-  { n:"CARD SHOW CON", d:"2026-08-15", t:"TBD", v:"Cow Palace", city:"Daly City", co:"smt", cat:"Culture", src:"web", url:"https://www.cowpalace.com/event/sf-card-collectible-show-2026/", cc:1, lat:37.7069, lng:-122.4194 },
-  { n:"160th Scottish Highland Gathering & Games", d:"2026-08-15", t:"TBD", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Culture", src:"web", url:"https://thescottishgames.com/", cc:1, lat:37.6598, lng:-121.888 },
-  { n:"Thrift Fest", d:"2026-08-15", t:"TBD", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Culture", src:"web", url:"https://thrift-fest.com/", cc:1, lat:37.6598, lng:-121.888 },
-  { n:"Pleasanton Quilt, Craft & Sewing Festival", d:"2026-08-15", t:"TBD", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Culture", src:"web", url:"https://www.quiltcraftsew.com/", cc:1, lat:37.6598, lng:-121.888 },
-  { n:"Corgi Con", d:"2026-08-15", t:"TBD", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Culture", src:"web", url:"https://corgicon.com/", cc:1, lat:37.6598, lng:-121.888 },
+
+  // ---- DoTheBay additions ----
+  { n:"OMNOM — Outside Lands night show", d:"2026-08-07", t:"10:00 PM", v:"1015 Folsom", city:"San Francisco", co:"sf", cat:"Nightlife", src:"db", url:"https://dothebay.com/events/2026/8/7/omnom-tickets", lat:37.778, lng:-122.4056 },
+  { n:"GRiZ — Outside Lands night show", d:"2026-08-07", t:"9:30 PM", v:"The Independent", city:"San Francisco", co:"sf", cat:"Music", src:"db", url:"https://dothebay.com/events/2026/8/7/griz-tickets", lat:37.7756, lng:-122.4376 },
+  { n:"Axial Tilt — all-star Grateful Dead celebration (also Sat)", d:"2026-08-07", t:"8:00 PM", v:"Great American Music Hall", city:"San Francisco", co:"sf", cat:"Music", src:"db", url:"https://dothebay.com/events/2026/8/7/axial-tilt-tickets", lat:37.7849, lng:-122.4214 },
+  { n:"SF Aerial Arts Festival (Aug 7–9)", d:"2026-08-07", t:"8:00 PM", v:"Fort Mason Center", city:"San Francisco", co:"sf", cat:"Culture", src:"db", url:"https://dothebay.com/events/2026/8/7/san-francisco-aerial-arts-festival-2026-tickets", lat:37.806, lng:-122.431 },
+  { n:"Aliens — 40th anniversary in 4K", d:"2026-08-07", t:"7:00 PM", v:"The Castro Theatre", city:"San Francisco", co:"sf", cat:"Culture", src:"db", url:"https://dothebay.com/events/2026/8/7/aliens-special-edition-40th-anniversary-in-4k-tickets", lat:37.762, lng:-122.4348 },
+  { n:"Orquesta Akokán", d:"2026-08-07", t:"8:00 PM", v:"The Freight", city:"Berkeley", co:"ala", cat:"Music", src:"db", url:"https://dothebay.com/events/2026/8/7/2026-orquesta-akokan-tickets", lat:37.869, lng:-122.268 },
+  { n:"Mark Normand (Fri–Sat, two shows nightly)", d:"2026-08-07", t:"7:00 PM", v:"Cobb's Comedy Club", city:"San Francisco", co:"sf", cat:"Culture", src:"db", url:"https://dothebay.com/events/2026/8/7/mark-normand-tickets", lat:37.7997, lng:-122.411 },
+  { n:"Colum Tyrrell (Fri–Sat)", d:"2026-08-07", t:"7:00 PM", v:"Punch Line", city:"San Francisco", co:"sf", cat:"Culture", src:"db", url:"https://dothebay.com/events/2026/8/7/colum-tyrrell-tickets", lat:37.792, lng:-122.399 },
+  { n:"Los Lobos & Los Lonely Boys — Brotherhood Tour", d:"2026-08-07", t:"7:30 PM", v:"The Mountain Winery", city:"Saratoga", co:"scl", cat:"Music", src:"db", url:"https://dothebay.com/events/2026/8/7/los-lobos-los-lonely-boys-tickets", lat:37.257, lng:-122.039 },
+  { n:"San Jose Jazz Summer Fest 2026 (Aug 7–9)", d:"2026-08-07", t:"6:00 PM", v:"Plaza de Cesar Chavez", city:"San Jose", co:"scl", cat:"Music", src:"db", url:"https://dothebay.com/events/2026/8/7/san-jose-jazz-summer-fest-2026-tickets", lat:37.3299, lng:-121.889 },
+  { n:"Castro Art Walk (free)", d:"2026-08-07", t:"6:00 PM", v:"The Castro", city:"San Francisco", co:"sf", cat:"Culture", src:"db", url:"https://dothebay.com/events/2026/8/7/castro-art-walk", lat:37.7609, lng:-122.435 },
+  { n:"Robots of the Ancient World + Zed", d:"2026-08-07", t:"8:00 PM", v:"The Chapel", city:"San Francisco", co:"sf", cat:"Music", src:"db", url:"https://dothebay.com/events/2026/8/7/robots-of-the-ancient-world-zed-the-spiral-electric-the-ghost-next-door-tickets", lat:37.7609, lng:-122.4212 },
+  { n:"Boots N' Cats presents Foolie", d:"2026-08-07", t:"9:00 PM", v:"Monarch", city:"San Francisco", co:"sf", cat:"Nightlife", src:"db", url:"https://dothebay.com/events/2026/8/7/foolie-tickets", lat:37.781, lng:-122.408 },
+  { n:"Goldie Boutilier", d:"2026-08-08", t:"9:30 PM", v:"The Independent", city:"San Francisco", co:"sf", cat:"Music", src:"db", url:"https://dothebay.com/events/2026/8/8/goldie-boutilier-tickets", lat:37.7756, lng:-122.4376 },
+  { n:"Corinne Bailey Rae — 20 Years of Like a Star (SOLD OUT)", d:"2026-08-08", t:"8:00 PM", v:"The Fillmore", city:"San Francisco", co:"sf", cat:"Music", src:"db", url:"https://dothebay.com/events/2026/8/8/like-a-star-celebrating-20-years-of-corinne-bailey-rae-tickets", lat:37.784, lng:-122.433 },
+  { n:"The Little Mermaid Sing-Along", d:"2026-08-08", t:"1:00 PM", v:"The Castro Theatre", city:"San Francisco", co:"sf", cat:"Culture", src:"db", url:"https://dothebay.com/events/2026/8/8/the-little-mermaid-sing-along-tickets", lat:37.762, lng:-122.4348 },
+  { n:"Sports (SOLD OUT)", d:"2026-08-08", t:"9:30 PM", v:"Rickshaw Stop", city:"San Francisco", co:"sf", cat:"Music", src:"db", url:"https://dothebay.com/events/2026/8/8/sports-tickets", lat:37.7765, lng:-122.4196 },
+  { n:"Charli xcx Q&A (SOLD OUT)", d:"2026-08-08", t:"6:00 PM", v:"Amoeba Music", city:"San Francisco", co:"sf", cat:"Culture", src:"db", url:"https://dothebay.com/events/2026/8/8/charli-xcx-qa-tickets", lat:37.7694, lng:-122.453 },
+  { n:"Pier Party at the Wharf (free)", d:"2026-08-08", t:"2:00 PM", v:"Fisherman's Wharf", city:"San Francisco", co:"sf", cat:"Music", src:"db", url:"https://dothebay.com/events/2026/7/11/pier-party-at-the-wharf-sunset-ickets", lat:37.808, lng:-122.4177 },
+  { n:"ZZ Top", d:"2026-08-08", t:"7:30 PM", v:"The Mountain Winery", city:"Saratoga", co:"scl", cat:"Music", src:"db", url:"https://dothebay.com/events/2026/8/8/zz-top-tickets", lat:37.257, lng:-122.039 },
+  { n:"PURA Saturdays", d:"2026-08-08", t:"10:00 PM", v:"1015 Folsom", city:"San Francisco", co:"sf", cat:"Nightlife", src:"db", url:"https://dothebay.com/events/2026/8/8/pura-saturdays-tickets", lat:37.778, lng:-122.4056 },
+  { n:"Grateful Dead Meet-Up at the Movies", d:"2026-08-08", t:"7:00 PM", v:"The Castro Theatre", city:"San Francisco", co:"sf", cat:"Culture", src:"db", url:"https://dothebay.com/events/2026/8/8/grateful-dead-meet-up-at-the-movies-2026-tickets", lat:37.762, lng:-122.4348 },
+  { n:"Vivid: Immerse Your Senses", d:"2026-08-08", t:"9:30 AM", v:"California Academy of Sciences", city:"San Francisco", co:"sf", cat:"Culture", src:"db", url:"https://dothebay.com/events/2026/8/5/vivid-immerse-your-senses-tickets", lat:37.7699, lng:-122.4661 },
+  { n:"LAFS & SLAMS comedy", d:"2026-08-08", t:"8:30 PM", v:"Mayes Oyster House", city:"San Francisco", co:"sf", cat:"Culture", src:"db", url:"https://dothebay.com/events/2026/8/8/lafs-slams-tickets", lat:37.786, lng:-122.421 },
+  { n:"Stern Grove Festival: PATTI LABELLE (free w/ RSVP)", d:"2026-08-09", t:"12:00 PM", v:"Stern Grove", city:"San Francisco", co:"sf", cat:"Music", src:"db", url:"https://dothebay.com/events/2026/8/9/patti-labelle-tickets", lat:37.736, lng:-122.477 },
+  { n:"Santana & The Doobie Brothers — Oneness Tour", d:"2026-08-09", t:"7:00 PM", v:"Shoreline Amphitheatre", city:"Mountain View", co:"scl", cat:"Music", src:"db", url:"https://dothebay.com/events/2026/8/9/santana-the-doobie-brothers-oneness-tour-2026-tickets", lat:37.4267, lng:-122.0806 },
+  { n:"Ben Böhmer — Outside Lands night show", d:"2026-08-09", t:"9:30 PM", v:"The Independent", city:"San Francisco", co:"sf", cat:"Music", src:"db", url:"https://dothebay.com/events/2026/8/9/ben-bohmer-tickets", lat:37.7756, lng:-122.4376 },
+  { n:"A League of Their Own in 35mm", d:"2026-08-09", t:"1:00 PM", v:"The Castro Theatre", city:"San Francisco", co:"sf", cat:"Culture", src:"db", url:"https://dothebay.com/events/2026/8/9/a-league-of-their-own-in-35mm-tickets", lat:37.762, lng:-122.4348 },
+  { n:"Hadestown: The Musical (screening)", d:"2026-08-09", t:"6:00 PM", v:"The Castro Theatre", city:"San Francisco", co:"sf", cat:"Culture", src:"db", url:"https://dothebay.com/events/2026/8/9/hadestown-the-musical-tickets", lat:37.762, lng:-122.4348 },
+  { n:"Deradoorian", d:"2026-08-09", t:"8:00 PM", v:"The Chapel", city:"San Francisco", co:"sf", cat:"Music", src:"db", url:"https://dothebay.com/events/2026/8/9/deradoorian-tickets", lat:37.7609, lng:-122.4212 },
+  { n:"George Thorogood & The Destroyers", d:"2026-08-09", t:"7:30 PM", v:"The Mountain Winery", city:"Saratoga", co:"scl", cat:"Music", src:"db", url:"https://dothebay.com/events/2026/8/9/george-thorogood-the-destroyers-tickets", lat:37.257, lng:-122.039 },
+  { n:"SF Comedy Showcase", d:"2026-08-09", t:"7:30 PM", v:"Punch Line", city:"San Francisco", co:"sf", cat:"Culture", src:"db", url:"https://dothebay.com/events/2026/8/9/s-f-comedy-showcase-tickets", lat:37.792, lng:-122.399 },
+  // ---- Radar (corrected dates) ----
+  { n:"Guildhouse Fighters — Thursday FGC weekly (SF6 + Melee)", d:"2026-08-13", t:"6:00 PM", v:"Guildhouse, 420 S 1st St", city:"San Jose", co:"scl", cat:"Gaming", src:"web", url:"https://www.start.gg/hub/bay-area-madhouse/schedule", shape:"star", lat:37.33, lng:-121.886 },
+  { n:"MAGWest 2026 — music & gaming festival (Aug 14–16)", d:"2026-08-14", t:"all day", v:"DoubleTree by Hilton San Jose", city:"San Jose", co:"scl", cat:"Gaming", src:"web", url:"https://magwest2026.sched.com/", shape:"star", lat:37.369, lng:-121.922 },
+  { n:"Silicon Valley Int'l Invention Festival (Aug 14–16)", d:"2026-08-14", t:"all day", v:"Santa Clara Convention Center", city:"Santa Clara", co:"scl", cat:"Business", src:"web", url:"https://santaclaraconventioncenter.com/convention-calendar/silicon-valley-international-invention-festival-sviif-2026", cc:1, lat:37.403, lng:-121.977 },
+  { n:"South Seas Swing 2026 — tiki + swing on the USS Hornet", d:"2026-08-15", t:"7:00 PM", v:"USS Hornet Museum", city:"Alameda", co:"ala", cat:"Music", src:"eb", shape:"sq", lat:37.7726, lng:-122.3025 },
+  { n:"Hype Con Bay Area (Aug 15–16)", d:"2026-08-15", t:"all day", v:"Santa Clara Convention Center", city:"Santa Clara", co:"scl", cat:"Culture", src:"web", url:"https://santaclaraconventioncenter.com/convention-calendar/hype-con-bay-area", cc:1, lat:37.403, lng:-121.977 },
+  { n:"Raageet: Priyani Vani Panditt Live", d:"2026-08-15", t:"evening", v:"Santa Clara Convention Center", city:"Santa Clara", co:"scl", cat:"Music", src:"web", url:"https://santaclaraconventioncenter.com/convention-calendar/raageet-priyani-vani-panditt-live-in-concert", cc:1, lat:37.403, lng:-121.977 },
+  { n:"Bamville Card Show (Aug 15–16)", d:"2026-08-15", t:"10:00 AM", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Culture", src:"web", url:"https://680cardshow.com/", cc:1, lat:37.654, lng:-121.888 },
+  { n:"USA Asian Culture & Food Expo / Asian Foodie Fest (Aug 15–16)", d:"2026-08-15", t:"10:00 AM", v:"San Mateo County Event Center", city:"San Mateo", co:"smt", cat:"Food & Drink", src:"web", cc:1, lat:37.545, lng:-122.2988 },
+  { n:"NorCal Barber Expo", d:"2026-08-16", t:"8:00 AM", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Business", src:"web", cc:1, lat:37.654, lng:-121.888 },
+  { n:"Goodguys 39th West Coast Nationals — 3,000+ hot rods (Aug 21–23)", d:"2026-08-21", t:"8:00 AM", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Culture", src:"web", cc:1, lat:37.654, lng:-121.888 },
+  { n:"Wobbleland 2026 (Aug 21–22)", d:"2026-08-21", t:"evening", v:"San Jose Convention Center", city:"San Jose", co:"scl", cat:"Music", src:"fb", url:"https://www.facebook.com/events/1664229521293213/", cc:1, lat:37.329, lng:-121.889 },
+  { n:"BRICK BLAST 2026 — LEGO fan event", d:"2026-08-22", t:"all day", v:"Santa Clara Convention Center", city:"Santa Clara", co:"scl", cat:"Culture", src:"web", url:"https://santaclaraconventioncenter.com/convention-calendar/brick-blast-2026", cc:1, lat:37.403, lng:-121.977 },
+  { n:"JSTSTANCE car show", d:"2026-08-22", t:"5:00 PM", v:"San Mateo County Event Center", city:"San Mateo", co:"smt", cat:"Culture", src:"fb", url:"https://www.facebook.com/events/814758750931476/", cc:1, lat:37.545, lng:-122.2988 },
+  { n:"California Bridal & Wedding Expo", d:"2026-08-23", t:"all day", v:"Santa Clara Convention Center", city:"Santa Clara", co:"scl", cat:"Business", src:"web", cc:1, lat:37.403, lng:-121.977 },
+  { n:"Alameda Tiki Noir Market (The Menagerie)", d:"2026-08-23", t:"1:00 PM", v:"Forbidden Island", city:"Alameda", co:"ala", cat:"Culture", src:"eb", shape:"sq", lat:37.7645, lng:-122.244 },
+  { n:"Pokémon World Championships 2026 (Aug 28–30)", d:"2026-08-28", t:"all day", v:"Moscone Center", city:"San Francisco", co:"sf", cat:"Gaming", src:"web", cc:1, shape:"star", lat:37.7842, lng:-122.4016 },
+  { n:"Mai Tai Day 2026", d:"2026-08-30", t:"3:00 PM", v:"Trader Vic's", city:"Emeryville", co:"ala", cat:"Food & Drink", src:"fc", url:"https://sf.funcheap.com/mai-tai-day-2026/", shape:"sq", lat:37.8378, lng:-122.3125 },
+  { n:"CARD SHOW CON (Sep 5–6)", d:"2026-09-05", t:"all day", v:"Cow Palace", city:"Daly City", co:"smt", cat:"Culture", src:"web", cc:1, lat:37.7069, lng:-122.4194 },
+  { n:"160th Scottish Highland Gathering & Games (Sep 5–6)", d:"2026-09-05", t:"all day", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Culture", src:"web", cc:1, lat:37.654, lng:-121.888 },
+  { n:"California Rum Fest & Congress 2026 (tiki vendors)", d:"2026-09-19", t:"2:00 PM", v:"Trader Vic's", city:"Emeryville", co:"ala", cat:"Food & Drink", src:"eb", shape:"sq", lat:37.8378, lng:-122.3125 },
+  { n:"Thrift Fest", d:"2026-09-19", t:"12:00 PM", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Culture", src:"fb", url:"https://www.facebook.com/events/938395768890457/", cc:1, lat:37.654, lng:-121.888 },
+  { n:"Autumnal Tiki", d:"2026-09-21", t:"7:00 PM", v:"The Alembic", city:"San Francisco", co:"sf", cat:"Food & Drink", src:"eb", shape:"sq", lat:37.7695, lng:-122.446 },
+  { n:"Pleasanton Quilt, Craft & Sewing Festival (Sep 24–26)", d:"2026-09-24", t:"all day", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Culture", src:"web", cc:1, lat:37.654, lng:-121.888 },
+  { n:"Corgi Con", d:"2026-09-26", t:"all day", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Culture", src:"web", cc:1, lat:37.654, lng:-121.888 },
+  { n:"626 Night Market — Bay Area (Oct 9–11)", d:"2026-10-09", t:"evening", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Food & Drink", src:"fb", url:"https://www.facebook.com/events/1348224376608335/", cc:1, lat:37.654, lng:-121.888 },
+  { n:"Pleasanton Harvest Festival (Oct 23–25)", d:"2026-10-23", t:"all day", v:"Alameda County Fairgrounds", city:"Pleasanton", co:"ala", cat:"Culture", src:"fb", url:"https://www.facebook.com/events/854289077582332/", cc:1, lat:37.654, lng:-121.888 },
 ];
 
 const EVENT_URLS = {};
 EVENTS.forEach((e, i) => { if (EVENT_URLS[i]) e.url = EVENT_URLS[i]; });
 
 const gmaps = e => "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(e.v + ", " + e.city + ", CA");
-const SRC_NAMES = { eb: "Eventbrite", fb: "Facebook", fc: "Funcheap", hz: "19hz", web: "Venue site" };
+const SRC_NAMES = { eb: "Eventbrite", fb: "Facebook", fc: "Funcheap", hz: "19hz", web: "Venue site", db: "DoTheBay" };
 const srcName = e => SRC_NAMES[e.src || "eb"];
-const SRC_QUERY = { eb: "eventbrite ", fb: "facebook event ", fc: "funcheap ", hz: "", web: "" };
+const SRC_QUERY = { eb: "eventbrite ", fb: "facebook event ", fc: "funcheap ", hz: "", web: "", db: "dothebay " };
 const eblink = e => e.url || ("https://www.google.com/search?q=" + encodeURIComponent(SRC_QUERY[e.src || "eb"] + e.n.replace(/\s*\(.*?\)\s*/g," ") + " " + e.city));
 const fmtDate = iso => {
   const [y,m,d] = iso.split("-").map(Number);
@@ -501,7 +531,7 @@ const t24 = e => {
   return h*60 + +m[2];
 };
 const ALL_TYPES = ["circle","diamond","tri","hex","tridown","pent","star","sq"];
-const state = { counties: new Set(["sf","scl","ala","smt"]), day: "all", sources: new Set(["eb","fb","fc","hz","web"]), types: new Set(ALL_TYPES), plan: new Set() };
+const state = { counties: new Set(["sf","scl","ala","smt"]), day: "all", sources: new Set(["eb","fb","fc","hz","web","db"]), types: new Set(ALL_TYPES), plan: new Set() };
 const isRadar = e => (e.cc || e.shape) && !DAY_NAMES[e.d];   // special interest events beyond this weekend
 const visible = e => state.counties.has(e.co) && state.sources.has(e.src || "eb") && state.types.has(shapeOf(e)) &&
   (DAY_NAMES[e.d] ? (state.day === "all" || e.d === state.day) : isRadar(e));
@@ -614,6 +644,28 @@ order.forEach(co => {
   listEl.appendChild(sec);
 }
 
+// "By start time" flat view — replaces county grouping when a single day is selected
+{
+  const sec = document.createElement("div");
+  sec.className = "county-section hidden"; sec.dataset.county = "bytime";
+  sec.innerHTML = '<div class="county-head"><h2 id="bytimeTitle">By start time</h2></div>';
+  WK.slice().sort((a,b) => a.d === b.d ? t24(a) - t24(b) : a.d.localeCompare(b.d)).forEach(e => {
+    const row = document.createElement("div");
+    row.className = "ev"; row.dataset.d = e.d; row.dataset.id = e.id;
+    row.title = "Double-click to add to / remove from your plan";
+    row.innerHTML =
+      '<div class="when"><span class="d">' + fmtDate(e.d) + '</span>' + e.t + '</div>' +
+      '<div class="what"><button class="addbtn" title="Add to plan">＋</button><div style="display:inline-block;vertical-align:middle;max-width:calc(100% - 40px)"><div class="name"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;background:' + COUNTY[e.co].color + '"></span>' + GLYPH[shapeOf(e)] + ' ' + e.n + '</div><div class="meta">' + e.v + ', ' + e.city + ' · <span class="cat">' + e.cat + ' · ' + srcName(e) + '</span></div></div></div>' +
+      '<div class="links"><a href="' + gmaps(e) + '" target="_blank">Google Maps ↗</a><br><a href="' + eblink(e) + '" target="_blank">Find tickets ↗</a></div>';
+    row._ev = e;
+    row.addEventListener("dblclick", ev => { if (ev.target.tagName !== "A") togglePlan(e.id); });
+    row.querySelector(".addbtn").addEventListener("click", ev => { ev.stopPropagation(); togglePlan(e.id); });
+    if (state.plan.has(e.id)) { row.classList.add("sel"); row.querySelector(".addbtn").textContent = "✓"; }
+    sec.appendChild(row);
+  });
+  listEl.appendChild(sec);
+}
+
 // counts in chips
 order.forEach(co => { document.getElementById("n-" + co).textContent = "(" + WK.filter(e => e.co === co).length + ")"; });
 
@@ -666,6 +718,9 @@ function refresh() {
     const inPlan = venue.events.some(e => state.plan.has(e.id));
     marker.setIcon(iconFor(venue, inPlan));
   });
+  const dayMode = state.day !== "all";
+  const btTitle = document.getElementById("bytimeTitle");
+  if (btTitle && dayMode) btTitle.textContent = (DAY_NAMES[state.day] || "") + " — all counties, by start time";
   document.querySelectorAll(".county-section").forEach(sec => {
     const co = sec.dataset.county;
     let any = false;
@@ -674,7 +729,11 @@ function refresh() {
       row.classList.toggle("hidden", !show);
       if (show) any = true;
     });
-    sec.classList.toggle("hidden", (co !== "radar" && !state.counties.has(co)) || !any);
+    let hide;
+    if (co === "radar") hide = !any;
+    else if (co === "bytime") hide = !dayMode || !any;
+    else hide = dayMode || !state.counties.has(co) || !any;
+    sec.classList.toggle("hidden", hide);
   });
 }
 
