@@ -151,7 +151,7 @@
 <body>
 <div class="wrap">
   <h1>Bay Area Weekend Planner — Aug 7–9</h1>
-  <div class="sub">This weekend's events across San Francisco, Santa Clara, Alameda (incl. Tri-Valley) &amp; San Mateo counties · Eventbrite + Facebook + Funcheap + 19hz + venue calendars · <em>228 weekend events + 32 on the radar</em> · Fri&nbsp;87 / Sat&nbsp;89 / Sun&nbsp;52</div>
+  <div class="sub">This weekend's events across San Francisco, Santa Clara, Alameda (incl. Tri-Valley) &amp; San Mateo counties · Eventbrite + Facebook + Funcheap + 19hz + venue calendars · <em>260 weekend events + 26 on the radar</em> · Fri&nbsp;100 / Sat&nbsp;100 / Sun&nbsp;60 · <b>build 2026-08-08 F</b></div>
 
   <nav class="jumpnav" id="jumpnav">
     <a href="#map">🗺 Map</a>
@@ -678,23 +678,41 @@ order.forEach(co => { document.getElementById("n-" + co).textContent = "(" + WK.
 
 // ---- Plan ----
 // ---- calendar export ----
+const parseClock = s => {
+  const m = /(\d{1,2}):(\d{2})\s*(AM|PM)/i.exec(String(s));
+  if (!m) return null;
+  let h = +m[1] % 12; if (/pm/i.test(m[3])) h += 12;
+  return h*60 + +m[2];
+};
 const calTimes = e => {
-  // start/end as [Y,M,D,h,m]; default duration 2h; "all day" handled separately
   const [Y,M,D] = e.d.split("-").map(Number);
-  const mins = t24(e);
-  const start = new Date(Y, M-1, D, Math.floor(mins/60), mins%60);
-  const end = new Date(start.getTime() + 2*3600*1000);
+  const startMins = parseClock(e.t) ?? (/even/i.test(e.t) ? 18*60 : null);
+  // no usable start time (e.g. "TBD", "all day") → treat as all-day
+  if (startMins === null || /all day/i.test(e.t)) {
+    const next = new Date(Y, M-1, D + 1);
+    const fd = dt => dt.getFullYear() + String(dt.getMonth()+1).padStart(2,"0") + String(dt.getDate()).padStart(2,"0");
+    return { allDay: true, d0: e.d.replace(/-/g,""), d1: fd(next) };
+  }
+  const start = new Date(Y, M-1, D, Math.floor(startMins/60), startMins%60);
+  let endMins = e.te ? parseClock(e.te) : null;              // optional real end time
+  let end;
+  if (endMins !== null && endMins !== undefined) {
+    end = new Date(Y, M-1, D, Math.floor(endMins/60), endMins%60);
+    if (end <= start) end = new Date(end.getTime() + 24*3600*1000);   // crosses midnight
+  } else {
+    end = new Date(start.getTime() + 2*3600*1000);           // default 2h
+  }
   const fmt = dt => dt.getFullYear() + String(dt.getMonth()+1).padStart(2,"0") + String(dt.getDate()).padStart(2,"0") + "T" + String(dt.getHours()).padStart(2,"0") + String(dt.getMinutes()).padStart(2,"0") + "00";
-  return { s: fmt(start), e: fmt(end), allDay: /all day/i.test(e.t) };
+  return { s: fmt(start), e: fmt(end), allDay: false, realEnd: endMins != null };
 };
 const gcalUrl = e => {
   const ct = calTimes(e);
-  const dates = ct.allDay ? e.d.replace(/-/g,"") + "/" + e.d.replace(/-/g,"") : ct.s + "/" + ct.e;
+  const dates = ct.allDay ? ct.d0 + "/" + ct.d1 : ct.s + "/" + ct.e;
   return "https://calendar.google.com/calendar/render?action=TEMPLATE&ctz=America/Los_Angeles" +
     "&text=" + encodeURIComponent(e.n) +
     "&dates=" + dates +
     "&location=" + encodeURIComponent(e.v + ", " + e.city + ", CA") +
-    "&details=" + encodeURIComponent((e.url || eblink(e)) + "\n(added from Bay Area Weekend Planner; times approximate, ~2h default)");
+    "&details=" + encodeURIComponent((e.url || eblink(e)) + (calTimes(e).realEnd ? "" : "\n(End time unknown — 2-hour default; check the event page and adjust)"));
 };
 const icsEsc = s => String(s).replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n");
 window.exportICS = function() {
@@ -704,10 +722,10 @@ window.exportICS = function() {
   picked.forEach(e => {
     const ct = calTimes(e);
     ics += "BEGIN:VEVENT\r\nUID:bawp-" + e.id + "-" + e.d.replace(/-/g,"") + "@weekend-planner\r\n";
-    if (ct.allDay) ics += "DTSTART;VALUE=DATE:" + e.d.replace(/-/g,"") + "\r\n";
+    if (ct.allDay) ics += "DTSTART;VALUE=DATE:" + ct.d0 + "\r\nDTEND;VALUE=DATE:" + ct.d1 + "\r\n";
     else ics += "DTSTART:" + ct.s + "\r\nDTEND:" + ct.e + "\r\n";
     ics += "SUMMARY:" + icsEsc(e.n) + "\r\nLOCATION:" + icsEsc(e.v + ", " + e.city + ", CA") + "\r\n" +
-      "DESCRIPTION:" + icsEsc((e.url || "") + " — times approximate (2h default)") + "\r\nEND:VEVENT\r\n";
+      "DESCRIPTION:" + icsEsc((e.url || "") + (ct.realEnd ? "" : " — end time unknown, 2h default")) + "\r\nEND:VEVENT\r\n";
   });
   ics += "END:VCALENDAR\r\n";
   const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
