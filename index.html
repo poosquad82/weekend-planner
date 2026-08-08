@@ -173,6 +173,10 @@
     <span class="chip day-chip off" data-day="2026-08-08">Saturday</span>
     <span class="chip day-chip off" data-day="2026-08-09">Sunday</span>
     <span class="sep"></span>
+    <span class="lbl">List</span>
+    <span class="chip view-chip" data-view="county">By county</span>
+    <span class="chip view-chip off" data-view="time">By time</span>
+    <span class="sep"></span>
     <span class="lbl">Source</span>
     <span class="chip src-chip" data-src="eb">Eventbrite</span>
     <span class="chip src-chip" data-src="fb">Facebook</span>
@@ -531,7 +535,7 @@ const t24 = e => {
   return h*60 + +m[2];
 };
 const ALL_TYPES = ["circle","diamond","tri","hex","tridown","pent","star","sq"];
-const state = { counties: new Set(["sf","scl","ala","smt"]), day: "all", sources: new Set(["eb","fb","fc","hz","web","db"]), types: new Set(ALL_TYPES), plan: new Set() };
+const state = { counties: new Set(["sf","scl","ala","smt"]), day: "all", view: "county", sources: new Set(["eb","fb","fc","hz","web","db"]), types: new Set(ALL_TYPES), plan: new Set() };
 const isRadar = e => (e.cc || e.shape) && !DAY_NAMES[e.d];   // special interest events beyond this weekend
 const visible = e => state.counties.has(e.co) && state.sources.has(e.src || "eb") && state.types.has(shapeOf(e)) &&
   (DAY_NAMES[e.d] ? (state.day === "all" || e.d === state.day) : isRadar(e));
@@ -673,6 +677,46 @@ order.forEach(co => {
 order.forEach(co => { document.getElementById("n-" + co).textContent = "(" + WK.filter(e => e.co === co).length + ")"; });
 
 // ---- Plan ----
+// ---- calendar export ----
+const calTimes = e => {
+  // start/end as [Y,M,D,h,m]; default duration 2h; "all day" handled separately
+  const [Y,M,D] = e.d.split("-").map(Number);
+  const mins = t24(e);
+  const start = new Date(Y, M-1, D, Math.floor(mins/60), mins%60);
+  const end = new Date(start.getTime() + 2*3600*1000);
+  const fmt = dt => dt.getFullYear() + String(dt.getMonth()+1).padStart(2,"0") + String(dt.getDate()).padStart(2,"0") + "T" + String(dt.getHours()).padStart(2,"0") + String(dt.getMinutes()).padStart(2,"0") + "00";
+  return { s: fmt(start), e: fmt(end), allDay: /all day/i.test(e.t) };
+};
+const gcalUrl = e => {
+  const ct = calTimes(e);
+  const dates = ct.allDay ? e.d.replace(/-/g,"") + "/" + e.d.replace(/-/g,"") : ct.s + "/" + ct.e;
+  return "https://calendar.google.com/calendar/render?action=TEMPLATE&ctz=America/Los_Angeles" +
+    "&text=" + encodeURIComponent(e.n) +
+    "&dates=" + dates +
+    "&location=" + encodeURIComponent(e.v + ", " + e.city + ", CA") +
+    "&details=" + encodeURIComponent((e.url || eblink(e)) + "\n(added from Bay Area Weekend Planner; times approximate, ~2h default)");
+};
+const icsEsc = s => String(s).replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n");
+window.exportICS = function() {
+  const picked = EVENTS.filter(e => state.plan.has(e.id));
+  if (!picked.length) return;
+  let ics = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Bay Area Weekend Planner//EN\r\nCALSCALE:GREGORIAN\r\n";
+  picked.forEach(e => {
+    const ct = calTimes(e);
+    ics += "BEGIN:VEVENT\r\nUID:bawp-" + e.id + "-" + e.d.replace(/-/g,"") + "@weekend-planner\r\n";
+    if (ct.allDay) ics += "DTSTART;VALUE=DATE:" + e.d.replace(/-/g,"") + "\r\n";
+    else ics += "DTSTART:" + ct.s + "\r\nDTEND:" + ct.e + "\r\n";
+    ics += "SUMMARY:" + icsEsc(e.n) + "\r\nLOCATION:" + icsEsc(e.v + ", " + e.city + ", CA") + "\r\n" +
+      "DESCRIPTION:" + icsEsc((e.url || "") + " — times approximate (2h default)") + "\r\nEND:VEVENT\r\n";
+  });
+  ics += "END:VCALENDAR\r\n";
+  const blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "my-weekend-plan.ics";
+  document.body.appendChild(a); a.click(); a.remove();
+};
+
 const routeUrl = evs => {
   // origin intentionally omitted — Google Maps will ask for / default to your current location
   const enc = e => encodeURIComponent(e.v + ", " + e.city + ", CA");
@@ -686,14 +730,14 @@ function renderPlan() {
   const picked = EVENTS.filter(e => state.plan.has(e.id)).sort((a,b) => a.d === b.d ? t24(a) - t24(b) : a.d.localeCompare(b.d));
   document.getElementById("planCount").textContent = "(" + picked.length + " event" + (picked.length === 1 ? "" : "s") + ")";
   if (!picked.length) { body.innerHTML = '<div class="plan-empty">Nothing picked yet.</div>'; return; }
-  let html = "";
+  let html = '<a class="route-btn" href="#" onclick="exportICS();return false;" style="margin-top:8px">📅 Export plan to calendar (.ics — Apple / Google / Outlook)</a>';
   const extraDates = [...new Set(picked.map(e => e.d).filter(d => !DAY_NAMES[d]))].sort();
   const dayLabel = d => DAY_NAMES[d] || (fmtDate(d) + " (beyond this weekend)");
   Object.keys(DAY_NAMES).concat(extraDates).forEach(d => {
     const evs = picked.filter(e => e.d === d);
     if (!evs.length) return;
     html += '<div class="plan-day"><h3>' + dayLabel(d) + '</h3>' +
-      evs.map(e => '<div class="plan-item"><span class="pt">' + e.t + '</span><span><a class="pl-name" href="' + eblink(e) + '" target="_blank" title="Open the event page for the full description">' + e.n + '</a> — ' + e.v + ', ' + e.city + '</span><span class="pl-links"><a href="' + eblink(e) + '" target="_blank">Tickets ↗</a> · <a href="' + gmaps(e) + '" target="_blank">Map ↗</a></span><button class="rm" title="Remove" onclick="togglePlan(' + e.id + ')">✕</button></div>').join("") +
+      evs.map(e => '<div class="plan-item"><span class="pt">' + e.t + '</span><span><a class="pl-name" href="' + eblink(e) + '" target="_blank" title="Open the event page for the full description">' + e.n + '</a> — ' + e.v + ', ' + e.city + '</span><span class="pl-links"><a href="' + eblink(e) + '" target="_blank">Tickets ↗</a> · <a href="' + gmaps(e) + '" target="_blank">Map ↗</a> · <a href="' + gcalUrl(e) + '" target="_blank" title="Add to Google Calendar">+GCal ↗</a></span><button class="rm" title="Remove" onclick="togglePlan(' + e.id + ')">✕</button></div>').join("") +
       '<a class="route-btn" href="' + routeUrl(evs) + '" target="_blank">Open ' + dayLabel(d).split(",")[0] + ' route in Google Maps ↗</a>' +
       (evs.length > 9 ? '<div class="plan-hint">Google Maps caps routes at ~10 stops — trim this day if the route link misbehaves.</div>' : '') +
       '</div>';
@@ -724,8 +768,9 @@ function refresh() {
     marker.setIcon(iconFor(venue, inPlan));
   });
   const dayMode = state.day !== "all";
+  const timeList = dayMode || state.view === "time";
   const btTitle = document.getElementById("bytimeTitle");
-  if (btTitle && dayMode) btTitle.textContent = (DAY_NAMES[state.day] || "") + " — all counties, by start time";
+  if (btTitle) btTitle.textContent = (dayMode ? (DAY_NAMES[state.day] || "") : "All weekend, Fri → Sun") + " — all counties, by start time";
   document.querySelectorAll(".county-section").forEach(sec => {
     const co = sec.dataset.county;
     let any = false;
@@ -736,8 +781,8 @@ function refresh() {
     });
     let hide;
     if (co === "radar") hide = !any;
-    else if (co === "bytime") hide = !dayMode || !any;
-    else hide = dayMode || !state.counties.has(co) || !any;
+    else if (co === "bytime") hide = !timeList || !any;
+    else hide = timeList || !state.counties.has(co) || !any;
     sec.classList.toggle("hidden", hide);
   });
 }
@@ -762,6 +807,14 @@ document.querySelectorAll(".src-chip").forEach(chip => {
     const s = chip.dataset.src;
     if (state.sources.has(s)) { state.sources.delete(s); chip.classList.add("off"); }
     else { state.sources.add(s); chip.classList.remove("off"); }
+    refresh();
+  });
+});
+// list view toggle: by county vs by time (a single-day selection always uses the time view)
+document.querySelectorAll(".view-chip").forEach(chip => {
+  chip.addEventListener("click", () => {
+    state.view = chip.dataset.view;
+    document.querySelectorAll(".view-chip").forEach(c => c.classList.toggle("off", c !== chip));
     refresh();
   });
 });
