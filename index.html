@@ -634,11 +634,14 @@ order.forEach(co => {
   RADAR.sort((a,b) => a.d.localeCompare(b.d)).forEach(e => {
     const row = document.createElement("div");
     row.className = "ev"; row.dataset.id = e.id;
+    row.title = "Double-click to add to / remove from your plan";
     row.innerHTML =
       '<div class="when"><span class="d">' + fmtDate(e.d) + '</span>' + e.t + '</div>' +
-      '<div class="what"><div class="name">' + icon(e) + e.n + '</div><div class="meta">' + e.v + ', ' + e.city + ' · <span class="cat">' + e.cat + ' · ' + srcName(e) + '</span></div></div>' +
+      '<div class="what"><button class="addbtn" title="Add to plan">＋</button><div style="display:inline-block;vertical-align:middle;max-width:calc(100% - 40px)"><div class="name">' + icon(e) + e.n + '</div><div class="meta">' + e.v + ', ' + e.city + ' · <span class="cat">' + e.cat + ' · ' + srcName(e) + '</span></div></div></div>' +
       '<div class="links"><a href="' + gmaps(e) + '" target="_blank">Google Maps ↗</a><br><a href="' + eblink(e) + '" target="_blank">Find tickets ↗</a></div>';
     row._ev = e;
+    row.addEventListener("dblclick", ev => { if (ev.target.tagName !== "A") togglePlan(e.id); });
+    row.querySelector(".addbtn").addEventListener("click", ev => { ev.stopPropagation(); togglePlan(e.id); });
     sec.appendChild(row);
   });
   listEl.appendChild(sec);
@@ -680,16 +683,18 @@ const routeUrl = evs => {
 
 function renderPlan() {
   const body = document.getElementById("planBody");
-  const picked = WK.filter(e => state.plan.has(e.id)).sort((a,b) => a.d === b.d ? t24(a) - t24(b) : a.d.localeCompare(b.d));
+  const picked = EVENTS.filter(e => state.plan.has(e.id)).sort((a,b) => a.d === b.d ? t24(a) - t24(b) : a.d.localeCompare(b.d));
   document.getElementById("planCount").textContent = "(" + picked.length + " event" + (picked.length === 1 ? "" : "s") + ")";
   if (!picked.length) { body.innerHTML = '<div class="plan-empty">Nothing picked yet.</div>'; return; }
   let html = "";
-  Object.keys(DAY_NAMES).forEach(d => {
+  const extraDates = [...new Set(picked.map(e => e.d).filter(d => !DAY_NAMES[d]))].sort();
+  const dayLabel = d => DAY_NAMES[d] || (fmtDate(d) + " (beyond this weekend)");
+  Object.keys(DAY_NAMES).concat(extraDates).forEach(d => {
     const evs = picked.filter(e => e.d === d);
     if (!evs.length) return;
-    html += '<div class="plan-day"><h3>' + DAY_NAMES[d] + '</h3>' +
+    html += '<div class="plan-day"><h3>' + dayLabel(d) + '</h3>' +
       evs.map(e => '<div class="plan-item"><span class="pt">' + e.t + '</span><span><a class="pl-name" href="' + eblink(e) + '" target="_blank" title="Open the event page for the full description">' + e.n + '</a> — ' + e.v + ', ' + e.city + '</span><span class="pl-links"><a href="' + eblink(e) + '" target="_blank">Tickets ↗</a> · <a href="' + gmaps(e) + '" target="_blank">Map ↗</a></span><button class="rm" title="Remove" onclick="togglePlan(' + e.id + ')">✕</button></div>').join("") +
-      '<a class="route-btn" href="' + routeUrl(evs) + '" target="_blank">Open ' + DAY_NAMES[d].split(",")[0] + ' route in Google Maps ↗</a>' +
+      '<a class="route-btn" href="' + routeUrl(evs) + '" target="_blank">Open ' + dayLabel(d).split(",")[0] + ' route in Google Maps ↗</a>' +
       (evs.length > 9 ? '<div class="plan-hint">Google Maps caps routes at ~10 stops — trim this day if the route link misbehaves.</div>' : '') +
       '</div>';
   });
